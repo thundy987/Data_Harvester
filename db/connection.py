@@ -15,5 +15,5 @@ def connect_to_db (server_name:str, db_name:str, username:str, password:str):
         connection = pyodbc.connect(f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server_name};DATABASE={db_name};UID={username};PWD={password};TrustServerCertificate=yes')
         print('Successfully connected to database')
         return connection
-    except pyodbc.Error as err:
-        raise  Exception('Unable to connect to database instance.') from err
+    except pyodbc.Error as e:
+        raise  Exception('Unable to connect to database instance.') from e
