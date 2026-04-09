@@ -8,6 +8,8 @@ def connect_to_db (server_name:str, db_name:str, username:str, password:str):
         db_name (str): name of database to connect to.
         username (str): SQL Server username (not windows auth).   
         password (str): password for supplied username.
+    Raises:
+        Exception: 'Unable to connect to database instance.'
     Returns:
         Connection (Connection): connection string for pyodbc.
     """
