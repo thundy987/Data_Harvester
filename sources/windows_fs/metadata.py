@@ -22,8 +22,8 @@ def extract_file_properties(path_to_file:str) -> tuple:
     """
     if not Path(path_to_file).exists():
          raise Exception('User supplied an invalid file path')  
-    #temp variables
     try:
+        #temp variables
         target_file = Path(path_to_file)
         file_stats = target_file.stat()
 

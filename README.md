@@ -35,6 +35,8 @@ All data cleansing and normalisation happens in the Python pipeline before data 
 
 Post-load SQL transformations (deduplication, folder restructuring, customer-specific adjustments) remain available to migration teams as a separate manual step — but are outside the scope of this tool.
 
+File path length validation is excluded as this is a post-load concern that can be handled within the database once the PDM Vault root path is known.
+
 ### Error Handling
 Errors are classified as recoverable or unrecoverable. Recoverable errors (locked files, unreadable metadata) are logged and skipped — the pipeline continues. Unrecoverable errors (DB connection failure, invalid root path) halt the pipeline immediately with a clear message.
 
