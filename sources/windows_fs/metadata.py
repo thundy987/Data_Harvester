@@ -1,7 +1,8 @@
-from pathlib import Path
 import hashlib
+from pathlib import Path
 
-def extract_file_properties(path_to_file:str) -> tuple:
+
+def extract_file_properties(path_to_file: str) -> tuple:
     """Extracts meta data from a file, given the path of the file.
 
     Args:
@@ -21,13 +22,13 @@ def extract_file_properties(path_to_file:str) -> tuple:
         md5_hash (str): MD5 hash checksum of file.
     """
     if not Path(path_to_file).exists():
-         raise Exception('User supplied an invalid file path')  
+        raise Exception('User supplied an invalid file path')
     try:
-        #temp variables
+        # temp variables
         target_file = Path(path_to_file)
         file_stats = target_file.stat()
 
-        #real variables
+        # real variables
         parent_folder = target_file.parent
         file_name = target_file.name
         file_extension = target_file.suffix
@@ -35,11 +36,19 @@ def extract_file_properties(path_to_file:str) -> tuple:
         last_modified_date = file_stats.st_mtime
         file_size = file_stats.st_size
 
-        #MD5 Checksum
-        with open(path_to_file, "rb") as f:
-            h = hashlib.file_digest(f, "md5")
+        # MD5 Checksum
+        with open(path_to_file, 'rb') as f:
+            h = hashlib.file_digest(f, 'md5')
             md5_hash = h.hexdigest()
-    
-        return parent_folder, file_name, file_extension, create_date, last_modified_date, file_size, md5_hash
+
+        return (
+            parent_folder,
+            file_name,
+            file_extension,
+            create_date,
+            last_modified_date,
+            file_size,
+            md5_hash,
+        )
     except Exception as e:
         raise Exception('Error occurred while extracting file metadata') from e
