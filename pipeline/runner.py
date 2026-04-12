@@ -21,15 +21,19 @@ def run_directories_pipeline(db_connection, scan_root_directory: str) -> dict:
     lookup_dict = {}
 
     for folder in sorted_folders:
-        directory_record = {'ProjectID': None, 'Name': '', 'Parent': ''}
+        try:
+            directory_record = {'ProjectID': None, 'Name': '', 'Parent': ''}
 
-        parent_folder = folder.parent
-        directory_record['Parent'] = lookup_dict.get(parent_folder, 0)
-        directory_record['ProjectID'] = create_project_id()
-        directory_record['Name'] = folder.name
+            parent_folder = folder.parent
+            directory_record['Parent'] = lookup_dict.get(parent_folder, 0)
+            directory_record['ProjectID'] = create_project_id()
+            directory_record['Name'] = folder.name
 
-        populate_directories_table(db_connection, directory_record)
+            populate_directories_table(db_connection, directory_record)
 
-        lookup_dict[folder] = directory_record['ProjectID']
-
+            lookup_dict[folder] = directory_record['ProjectID']
+        except Exception as e:
+            # TODO: replace with logger
+            print(f'Skipping folder {folder}: {e}')
+            continue
     return lookup_dict

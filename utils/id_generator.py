@@ -1,6 +1,7 @@
 from itertools import count
 
-id_gen = count(start=1)
+project_id_gen = count(start=1)
+document_id_gen = count(start=1)
 
 
 def create_project_id() -> int:
@@ -9,7 +10,7 @@ def create_project_id() -> int:
     Returns:
         int: Unique counter ID for projectID
     """
-    return next(id_gen)
+    return next(project_id_gen)
 
 
 def create_document_id() -> int:
@@ -18,4 +19,4 @@ def create_document_id() -> int:
     Returns:
         int: Unique counter ID for DocumentID
     """
-    return next(id_gen)
+    return next(document_id_gen)

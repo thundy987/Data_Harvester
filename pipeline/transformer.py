@@ -21,10 +21,12 @@ def cleanse_file_handler(raw_record: tuple) -> dict:
     ) = raw_record
 
     file_name = remove_white_spaces(file_name)
-    illegal = find_illegal_characters_in_file_name(file_name)
-    if illegal:
-        # TODO: replace with logger
-        print(f'{file_name} contains illegal characters: {illegal}')
+
+    if file_name:  # make sure file_name is not None
+        illegal = find_illegal_characters_in_file_name(file_name)
+        if illegal:
+            # TODO: replace with logger
+            print(f'{file_name} contains illegal characters: {illegal}')
 
     create_date = format_date(create_date)
     last_modified_date = format_date(last_modified_date)
@@ -41,7 +43,7 @@ def cleanse_file_handler(raw_record: tuple) -> dict:
     }
 
 
-def remove_white_spaces(text: str) -> str:
+def remove_white_spaces(text: str) -> str | None:
     """Removes any leading and trailing spaces from a str.
 
     Args:
@@ -55,7 +57,7 @@ def remove_white_spaces(text: str) -> str:
     return text.strip()
 
 
-def find_illegal_characters_in_file_name(file_name: str) -> list:
+def find_illegal_characters_in_file_name(file_name: str) -> list | None:
     """Checks for illegal characters in a given file name for a Windows file system.
 
     Args:
@@ -78,7 +80,7 @@ def find_illegal_characters_in_file_name(file_name: str) -> list:
     return None
 
 
-def format_date(ugly_date: float) -> str:
+def format_date(ugly_date: float) -> str | None:
     """Converts a Unix timestamp (float) to ISO 8601 date format (str).
 
     Args:
@@ -91,7 +93,7 @@ def format_date(ugly_date: float) -> str:
         clean_date = datetime.fromtimestamp(ugly_date)
         formatted_date = clean_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         return formatted_date
-    except Exception:
+    except Exception as e:
         # TODO: replace print with logger
-        print('Issue found during date formatting')
+        print(f'Issue found during date formatting {e}')
         return None

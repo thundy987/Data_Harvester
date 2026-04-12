@@ -14,3 +14,5 @@ db_connection = connect_to_db('sql\\dba', 'Migration', 'sa', 'g')
 # print(props_cleaned)
 
 run_directories_pipeline(db_connection, 'C:\\Projects')
+
+# TODO close db connection
