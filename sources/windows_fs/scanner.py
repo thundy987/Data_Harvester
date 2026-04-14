@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def walk_windows_fs(scan_root_directory: str) -> tuple:
+def walk_windows_fs(scan_root_directory: str) -> tuple[list[Path], list[Path]]:
     """
     Discovers all subfolders and files contained within a given root directory.
     Args:
@@ -11,10 +11,9 @@ def walk_windows_fs(scan_root_directory: str) -> tuple:
         Exception: 'Error occurred during file scan'
 
     Returns:
-        file_list (str):
-        folder_list (str):
+        file_list (list[Path]):
+        folder_list (list[Path]):
     """
-
     if not Path(scan_root_directory).exists():
         raise Exception('User supplied an invalid root path')
     try:

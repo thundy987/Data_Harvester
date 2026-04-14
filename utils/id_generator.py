@@ -4,6 +4,7 @@ project_id_gen = count(start=1)
 document_id_gen = count(start=1)
 
 
+# TODO What if module is reloaded or two pipeline instances run? Counters reset. Probably should fix this.
 def create_project_id() -> int:
     """Generates an incrementing counter.
 

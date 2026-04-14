@@ -6,7 +6,7 @@ def populate_directories_table(db_connection, directory_record: dict) -> None:
         directory_record (dict): ProjectID, Name, Parent being written to the db.
 
     Raises:
-        Exception: 'Error connecting to target db'
+        Exception: 'Error writing to Directories table'
     """
     try:
         # 1. Establish connection
@@ -24,18 +24,42 @@ def populate_directories_table(db_connection, directory_record: dict) -> None:
         # 3. Commit the transaction
         db_connection.commit()
     except Exception as e:
-        raise Exception('Error connecting to target db') from e
+        raise Exception('Error writing to Directories table') from e
+
+
+def is_import_files_empty(db_connection) -> bool:
+    """Checks if the ImportFiles table is empty. This should be empty before the pipeline writes to it.
+
+    Args:
+        db_connection (Connection): Db connection details.
+
+    Raises:
+        Exception: 'Error querying ImportFiles table'
+
+    Returns:
+        bool: True if the table is empty, False if the table is not empty.
+    """
+    try:
+        cursor = db_connection.cursor()
+
+        sql = 'SELECT TOP(1) 1 FROM ImportFiles'
+
+        cursor.execute(sql)
+
+        return False if cursor.fetchone() else True
+    except Exception as e:
+        raise Exception('Error querying ImportFiles table') from e
 
 
 def populate_import_files_table(db_connection, file_record: dict) -> None:
     """Writes a single record to the ImportFiles table of the target db.
 
     Args:
-        db_connection (_type_): Db connection details.
+        db_connection (Connection): Db connection details.
         file_record (dict): FileName, DocumentID, ProjectID, ModifyDate, FolderPath, CreateDate, MD5, FileSize being written to the db.
 
     Raises:
-        Exception: 'Error connecting to target db'
+        Exception: 'Error writing to ImportFiles table'
     """
     try:
         # 1. Establish connection
@@ -58,4 +82,4 @@ def populate_import_files_table(db_connection, file_record: dict) -> None:
         # 3. Commit the transaction
         db_connection.commit()
     except Exception as e:
-        raise Exception('Error connecting to target db') from e
+        raise Exception('Error writing to ImportFiles table') from e

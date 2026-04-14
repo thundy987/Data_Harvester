@@ -1,7 +1,10 @@
 from datetime import datetime
+from pathlib import Path
 
 
-def cleanse_file_handler(raw_record: tuple) -> dict:
+def cleanse_file_record(
+    raw_record: tuple[Path, str, str, float, float, int, str],
+) -> dict:
     """Executes cleansing functions on a tuple of file properties and returns the values as a dictionary.
 
     Args:

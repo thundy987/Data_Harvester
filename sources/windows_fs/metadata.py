@@ -2,11 +2,11 @@ import hashlib
 from pathlib import Path
 
 
-def extract_file_properties(path_to_file: str) -> tuple:
+def extract_file_properties(path_to_file: Path | str) -> tuple:
     """Extracts meta data from a file, given the path of the file.
 
     Args:
-        path_to_file (str): path to the file.
+        path_to_file (Path | str): path to the file.
 
     Raises:
         Exception: 'User supplied an invalid file path'
