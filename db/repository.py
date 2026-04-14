@@ -1,3 +1,27 @@
+def is_directories_empty(db_connection) -> bool:
+    """Checks if the Directories table is empty. This should be empty before the pipeline writes to it.
+
+    Args:
+        db_connection (Connection): Db connection details.
+
+    Raises:
+        Exception: 'Error querying Directories table'
+
+    Returns:
+        bool: True if the table is empty, False if the table is not empty.
+    """
+    try:
+        with db_connection.cursor() as cursor:
+            sql = 'SELECT TOP(1) 1 FROM Directories'
+
+            cursor.execute(sql)
+
+            return False if cursor.fetchone() else True
+
+    except Exception as e:
+        raise Exception('Error querying Directories table') from e
+
+
 def populate_directories_table(db_connection, directory_record: dict) -> None:
     """Writes a single record to the Directories table of the target db.
 
@@ -10,19 +34,19 @@ def populate_directories_table(db_connection, directory_record: dict) -> None:
     """
     try:
         # 1. Establish connection
-        cursor = db_connection.cursor()
+        with db_connection.cursor() as cursor:
+            # 2. Execute Insert
+            sql = 'INSERT INTO Directories (ProjectID, Name, Parent) VALUES (?, ?, ?)'  # '?' placeholder prevents sql injection.
+            values = (
+                directory_record.get('ProjectID'),
+                directory_record.get('Name'),
+                directory_record.get('Parent'),
+            )
+            cursor.execute(sql, values)
 
-        # 2. Execute Insert
-        sql = 'INSERT INTO Directories (ProjectID, Name, Parent) VALUES (?, ?, ?)'  # '?' placeholder prevents sql injection.
-        values = (
-            directory_record.get('ProjectID'),
-            directory_record.get('Name'),
-            directory_record.get('Parent'),
-        )
-        cursor.execute(sql, values)
+            # 3. Commit the transaction
+            db_connection.commit()
 
-        # 3. Commit the transaction
-        db_connection.commit()
     except Exception as e:
         raise Exception('Error writing to Directories table') from e
 
@@ -40,13 +64,13 @@ def is_import_files_empty(db_connection) -> bool:
         bool: True if the table is empty, False if the table is not empty.
     """
     try:
-        cursor = db_connection.cursor()
+        with db_connection.cursor() as cursor:
+            sql = 'SELECT TOP(1) 1 FROM ImportFiles'
 
-        sql = 'SELECT TOP(1) 1 FROM ImportFiles'
+            cursor.execute(sql)
 
-        cursor.execute(sql)
+            return False if cursor.fetchone() else True
 
-        return False if cursor.fetchone() else True
     except Exception as e:
         raise Exception('Error querying ImportFiles table') from e
 
@@ -63,23 +87,47 @@ def populate_import_files_table(db_connection, file_record: dict) -> None:
     """
     try:
         # 1. Establish connection
-        cursor = db_connection.cursor()
+        with db_connection.cursor() as cursor:
+            # 2. Execute Insert
+            sql = 'INSERT INTO ImportFiles (FileName, DocumentID, ProjectID, ModifyDate, FolderPath, CreateDate, MD5, FileSize) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'  # '?' placeholder prevents sql injection.
+            values = (
+                file_record.get('FileName'),
+                file_record.get('DocumentID'),
+                file_record.get('ProjectID'),
+                file_record.get('ModifyDate'),
+                file_record.get('FolderPath'),
+                file_record.get('CreateDate'),
+                file_record.get('MD5'),
+                file_record.get('FileSize'),
+            )
+            cursor.execute(sql, values)
 
-        # 2. Execute Insert
-        sql = 'INSERT INTO ImportFiles (FileName, DocumentID, ProjectID, ModifyDate, FolderPath, CreateDate, MD5, FileSize) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'  # '?' placeholder prevents sql injection.
-        values = (
-            file_record.get('FileName'),
-            file_record.get('DocumentID'),
-            file_record.get('ProjectID'),
-            file_record.get('ModifyDate'),
-            file_record.get('FolderPath'),
-            file_record.get('CreateDate'),
-            file_record.get('MD5'),
-            file_record.get('FileSize'),
-        )
-        cursor.execute(sql, values)
+            # 3. Commit the transaction
+            db_connection.commit()
 
-        # 3. Commit the transaction
-        db_connection.commit()
     except Exception as e:
         raise Exception('Error writing to ImportFiles table') from e
+
+
+def clear_files_and_folders_tables(db_connection) -> None:
+    """Truncates the Import Files and Directories tables in the target db.
+
+    Args:
+        db_connection (Connection): Db connection details.
+
+    Raises:
+        Exception: 'Error clearing tables'
+    """
+    try:
+        with db_connection.cursor() as cursor:
+            sql_one = 'TRUNCATE TABLE dbo.ImportFiles;'
+
+            cursor.execute(sql_one)
+
+            sql_two = 'TRUNCATE TABLE dbo.Directories;'
+
+            cursor.execute(sql_two)
+
+            db_connection.commit()
+    except Exception as e:
+        raise Exception('Error clearing tables') from e

@@ -21,8 +21,7 @@ Source System → [pdm-harvester] → Migration DB → XML Export Tool → PDM V
 - Walks a Windows file system from a user-supplied root directory
 - Extracts file and folder metadata (name, path, size, dates, MD5 checksum)
 - Populates the Migration Database (`Directories`, `ImportFiles`, `ActivityLog`)
-- Batch inserts for performance
-- Input validation at startup — fails fast with clear messages
+- Input validation at startup to fails fast with clear messages
 - Separate application logging to file
 - Designed for extension to additional source systems
 
@@ -31,6 +30,7 @@ Source System → [pdm-harvester] → Migration DB → XML Export Tool → PDM V
 ## Design Decisions
 
 ### Transformation in Python, not SQL
+
 All data cleansing and normalisation happens in the Python pipeline before data is written to the database. The Migration DB is treated as a load target, not a transformation workspace. This keeps business logic version-controlled, testable, and source-agnostic.
 
 Post-load SQL transformations (deduplication, folder restructuring, customer-specific adjustments) remain available to migration teams as a separate manual step — but are outside the scope of this tool.
@@ -38,15 +38,19 @@ Post-load SQL transformations (deduplication, folder restructuring, customer-spe
 File path length validation is excluded as this is a post-load concern that can be handled within the database once the PDM Vault root path is known.
 
 ### Error Handling
+
 Errors are classified as recoverable or unrecoverable. Recoverable errors (locked files, unreadable metadata) are logged and skipped — the pipeline continues. Unrecoverable errors (DB connection failure, invalid root path) halt the pipeline immediately with a clear message.
 
 ### Idempotency
+
 v1 validates that the `ImportFiles` table is empty before running. The pipeline will not proceed if records exist, preventing accidental duplication. The user must explicitly clear the table before re-running.
 
 ### Batch Inserts
+
 Data is written to the database in batches, not row-by-row. Batch size is configurable. This is standard practice for pipeline performance at scale.
 
 ### Testing
+
 Transformer logic is unit tested with `pytest`. Tests require no database connection or live file system — inputs and expected outputs are defined in the test itself. Integration and end-to-end testing is planned for a future version.
 
 ---
@@ -58,6 +62,7 @@ Transformer logic is unit tested with `pytest`. Tests require no database connec
 - No resume capability. If the pipeline fails mid-run, the DB should be cleared before restarting.
 - SolidWorks custom properties and cross-references not yet extracted. Requires SolidWorks Document Manager SDK (planned).
 - No GUI. Command line only.
+- Directories.Path is not populated by the harvester and that RebuildDirectoryPaths should be run post-load if needed.
 
 ---
 
@@ -68,6 +73,7 @@ Transformer logic is unit tested with `pytest`. Tests require no database connec
 - SolidWorks PDM Migration Database (schema: `CreateMigrationDB.sql`)
 
 ### Python Dependencies
+
 ```
 pyodbc
 pathlib
@@ -77,6 +83,7 @@ pytest
 ```
 
 Install with:
+
 ```bash
 pip install -r requirements.txt
 ```

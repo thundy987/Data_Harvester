@@ -1,18 +1,74 @@
+import argparse
+import os
+
+from dotenv import load_dotenv
+
 from db.connection import connect_to_db
+from db.repository import (
+    clear_files_and_folders_tables,
+    is_directories_empty,
+    is_import_files_empty,
+)
+from pipeline.orchestrator import run_pipeline
 
-# from sources.windows_fs.scanner import walk_windows_fs
-# from sources.windows_fs.metadata import extract_file_properties
-# from pipeline.transformer import cleanse_file_handler
-from pipeline.orchestrator import run_directories_pipeline
+load_dotenv()
 
-db_connection = connect_to_db('sql\\dba', 'Migration', 'sa', 'g')
-# walk_windows_fs('C:\\Data_Harvester')
-# props = extract_file_properties('C:\\Temp\\context.md')
-# print(props)
 
-# props_cleaned = cleanse_file_handler(props)
-# print(props_cleaned)
+def main():
+    parser = argparse.ArgumentParser(
+        description='Script scans a windows file system, cleanses data, and loads it into a database'
+    )
 
-run_directories_pipeline(db_connection, 'C:\\Projects')
+    parser.add_argument(
+        '--scan_root_directory',
+        help='the root directory to be scanned',
+        default=os.getenv('ROOT'),
+    )
+    parser.add_argument(
+        '--server_name', help='server\\instance name', default=os.getenv('SERVER')
+    )
+    parser.add_argument(
+        '--database_name', help='target db name', default=os.getenv('DATABASE')
+    )
+    parser.add_argument(
+        '--sql_username',
+        help='sql server account name: default is sa',
+        default=os.getenv('SQL_USERNAME'),
+    )
+    parser.add_argument(
+        '--password',
+        help='password for the provided user acct',
+        default=os.getenv('PASSWORD'),
+    )
+    parser.add_argument('--clear', action='store_true', help='clears database tables')
 
-# TODO close db connection
+    args = parser.parse_args()
+
+    db_connection = None  # guard against 'finally' running if connection fails
+    try:
+        db_connection = connect_to_db(
+            args.server_name, args.database_name, args.sql_username, args.password
+        )
+
+        if args.clear:
+            clear_files_and_folders_tables(db_connection)
+
+        if not is_directories_empty(db_connection):
+            raise Exception(
+                'Directories table is not empty. Re-run with --clear to clear tables.'
+            )
+
+        if not is_import_files_empty(db_connection):
+            raise Exception(
+                'ImportFiles table is not empty. Re-run with --clear to clear tables.'
+            )
+
+        run_pipeline(db_connection, args.scan_root_directory)
+
+    finally:
+        if db_connection:
+            db_connection.close()
+
+
+if __name__ == '__main__':
+    main()

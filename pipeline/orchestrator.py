@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from db.repository import (
+    is_directories_empty,
     is_import_files_empty,
     populate_directories_table,
     populate_import_files_table,
@@ -21,12 +24,26 @@ def run_directories_pipeline(db_connection, scan_root_directory: str) -> dict:
     Returns:
         lookup_dict (dict): A dictionary with {full_path: ProjectID} form.
     """
+    if not is_directories_empty(db_connection):
+        raise Exception('Directories table is not empty')
+
     _, all_folders = walk_windows_fs(scan_root_directory)
 
     sorted_folders = sorted(all_folders, key=lambda p: len(p.parts))
 
     lookup_dict = {}
 
+    # set the root first
+    directory_record = {
+        'Parent': 0,
+        'ProjectID': create_project_id(),
+        'Name': Path(scan_root_directory).name,
+    }
+
+    populate_directories_table(db_connection, directory_record)
+    lookup_dict[scan_root_directory] = directory_record['ProjectID']
+
+    # iterate subfolders
     for folder in sorted_folders:
         try:
             parent_folder = folder.parent
