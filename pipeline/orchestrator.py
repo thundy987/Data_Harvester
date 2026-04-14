@@ -3,6 +3,7 @@ from pathlib import Path
 from db.repository import (
     is_directories_empty,
     is_import_files_empty,
+    log_activity,
     populate_directories_table,
     populate_import_files_table,
 )
@@ -118,11 +119,16 @@ def run_pipeline(db_connection, scan_root_directory: str) -> None:
         Exception: 'Files pipeline failed.'
     """
     try:
+        log_activity(db_connection, 'Start populating dbo.Directories')
         directory_lookup = run_directories_pipeline(db_connection, scan_root_directory)
+        log_activity(db_connection, 'Finish populating dbo.Directories')
     except Exception as e:
         raise Exception('Directories pipeline failed, no files loaded') from e
 
     try:
+        log_activity(db_connection, 'Start populating dbo.ImportFiles')
         run_files_pipeline(db_connection, scan_root_directory, directory_lookup)
+        log_activity(db_connection, 'Finish populating dbo.ImportFiles')
+
     except Exception as e:
         raise Exception('Files pipeline failed.') from e

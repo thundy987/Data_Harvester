@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 def is_directories_empty(db_connection) -> bool:
     """Checks if the Directories table is empty. This should be empty before the pipeline writes to it.
 
@@ -131,3 +134,27 @@ def clear_files_and_folders_tables(db_connection) -> None:
             db_connection.commit()
     except Exception as e:
         raise Exception('Error clearing tables') from e
+
+
+def log_activity(
+    db_connection, activity_description: str, activity_time: datetime | None = None
+) -> None:
+    """Executes the Activity stored procedure in the target db.
+
+    Args:
+        db_connection (Connection): Db connection details.
+        activity_description (str): Description of the activity
+        activity_time (datetime | None, optional): activity time stamp - Defaults to None.
+
+    Raises:
+        Exception: 'Error executing Activity stored procedure'
+    """
+    try:
+        with db_connection.cursor() as cursor:
+            sql = 'EXEC dbo.Activity ?, ?'
+
+            cursor.execute(sql, (activity_description, activity_time))
+
+            db_connection.commit()
+    except Exception as e:
+        raise Exception('Error executing Activity stored procedure') from e
