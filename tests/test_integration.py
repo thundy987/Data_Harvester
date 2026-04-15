@@ -1,7 +1,10 @@
 """
 Integration tests against the live SQL Server instance defined in .env.
-The db_connection fixture (conftest.py) truncates both tables before AND after
-each test, so these tests are safe to run repeatedly.
+The conn fixture truncates both tables before AND after each test,
+so these tests are safe to run repeatedly.
+
+These tests are excluded from the default `pytest` run.
+Run them explicitly with: pytest -m integration
 """
 import os
 import unittest
@@ -24,6 +27,8 @@ from db.repository import (
 from pipeline.orchestrator import run_pipeline
 
 load_dotenv()
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope='function')

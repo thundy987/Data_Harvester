@@ -186,13 +186,21 @@ python main.py
 python -m pytest
 ```
 
-Tests require a live SQL Server connection. Set credentials in `.env` before running. Use a test database because the suite wipes both tables on every run.
+Unit tests run by default and do not require a database connection. They use mocked connections to verify SQL calls, parameters, and error handling.
+
+To run integration tests against a live SQL Server instance:
+
+```bash
+python -m pytest -m integration
+```
+
+Integration tests require credentials in `.env` and will wipe both target tables on every run. Use a test database.
 
 ---
 
 ## Limitations
 
-> V1 only supports Windows file systems, SQL Server authentication, and command-line execution. Inserts are row-by-row. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. Run `RebuildDirectoryPaths` post-load if needed.
+> V1 only supports Windows file systems, SQL Server authentication, and command-line execution. Inserts are row-by-row. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column.
 
 ---
 
