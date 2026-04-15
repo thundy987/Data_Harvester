@@ -14,22 +14,25 @@ from utils.id_generator import create_document_id, create_project_id
 from utils.logger import logger
 
 
-# TODO walk_windows_fs() being called twice - call once and pass to both pipelines?
-def run_directories_pipeline(db_connection, scan_root_directory: str) -> dict:
-    """Creates a dictionary that will be used to populate the Directories table
-    with the folder path and a ProjectID.
+def run_directories_pipeline(
+    db_connection, scan_root_directory: str, all_folders: list
+) -> dict:
+    """Creates a dictionary that will be used to populate the Directories table with the folder path and a ProjectID.
 
     Args:
         db_connection (Connection): Connection details for the target db.
-        scan_root_directory (str): The directory being harvested and loaded.
+        scan_root_directory (str): The directory being harvested and loaded (needed for root folder(s))
+        all_folders (list): list of all folders in the scan.
+
+    Raises:
+        Exception: 'Directories table is not empty'
 
     Returns:
-        lookup_dict (dict): A dictionary with {full_path: ProjectID} form.
+        lookup_dict: A dictionary with {full_path: ProjectID} form.
     """
     if not is_directories_empty(db_connection):
+        logger.error('Directories table is not empty')
         raise Exception('Directories table is not empty')
-
-    _, all_folders = walk_windows_fs(scan_root_directory)
 
     sorted_folders = sorted(all_folders, key=lambda p: len(p.parts))
 
@@ -65,23 +68,20 @@ def run_directories_pipeline(db_connection, scan_root_directory: str) -> dict:
     return lookup_dict
 
 
-def run_files_pipeline(
-    db_connection, scan_root_directory: str, directory_lookup: dict
-) -> None:
+def run_files_pipeline(db_connection, all_files: list, directory_lookup: dict) -> None:
     """Populates the ImportFiles table using the cleaned up data and the ProjectID from run_directories_pipeline()
 
     Args:
         db_connection (Connection): Connection details for the target db.
-        scan_root_directory (str): The directory being harvested and loaded.
+        all_files (list): The files being harvested and loaded.
         directory_lookup (dict): Directories dictionary to provide ProjectID
 
     Raises:
         Exception: raise Exception('ImportFiles table is not empty')
     """
     if not is_import_files_empty(db_connection):
+        logger.error('ImportFiles table is not empty')
         raise Exception('ImportFiles table is not empty')
-
-    all_files, _ = walk_windows_fs(scan_root_directory)
 
     for file in all_files:
         try:
@@ -119,9 +119,12 @@ def run_pipeline(db_connection, scan_root_directory: str) -> None:
         Exception: 'Files pipeline failed.'
     """
     try:
+        all_files, all_folders = walk_windows_fs(scan_root_directory)
         log_activity(db_connection, 'Start populating dbo.Directories')
         logger.info('Start populating dbo.Directories')
-        directory_lookup = run_directories_pipeline(db_connection, scan_root_directory)
+        directory_lookup = run_directories_pipeline(
+            db_connection, scan_root_directory, all_folders
+        )
         log_activity(db_connection, 'Finish populating dbo.Directories')
         logger.info('Finish populating dbo.Directories')
     except Exception as e:
@@ -131,7 +134,7 @@ def run_pipeline(db_connection, scan_root_directory: str) -> None:
     try:
         log_activity(db_connection, 'Start populating dbo.ImportFiles')
         logger.info('Start populating dbo.ImportFiles')
-        run_files_pipeline(db_connection, scan_root_directory, directory_lookup)
+        run_files_pipeline(db_connection, all_files, directory_lookup)
         log_activity(db_connection, 'Finish populating dbo.ImportFiles')
         logger.info('Finish populating dbo.ImportFiles')
 

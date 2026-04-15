@@ -7,7 +7,7 @@ def connect_to_db(server_name: str, db_name: str, username: str, password: str):
     """
     Attempts to connect to a SQL Server instance using supplied info. Raises exception if connection fails
     Args:
-        server_name (str): SQL server and instance name (e.g. server\instance).
+        server_name (str): SQL server and instance name (e.g. server\\instance).
         db_name (str): name of database to connect to.
         username (str): SQL Server username (not windows auth).
         password (str): password for supplied username.

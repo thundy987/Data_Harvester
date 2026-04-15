@@ -62,6 +62,7 @@ Transformer logic is unit tested with `pytest`. Tests require no database connec
 - No resume capability. If the pipeline fails mid-run, the DB should be cleared before restarting.
 - SolidWorks custom properties and cross-references not yet extracted. Requires SolidWorks Document Manager SDK (planned).
 - No GUI. Command line only.
+- Concurrent pipeline instances are not supported.
 - Directories.Path is not populated by the harvester and that RebuildDirectoryPaths should be run post-load if needed.
 
 ---
