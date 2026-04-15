@@ -1,6 +1,8 @@
 import hashlib
 from pathlib import Path
 
+from utils.logger import logger
+
 
 def extract_file_properties(path_to_file: Path | str) -> tuple:
     """Extracts meta data from a file, given the path of the file.
@@ -22,6 +24,7 @@ def extract_file_properties(path_to_file: Path | str) -> tuple:
         md5_hash (str): MD5 hash checksum of file.
     """
     if not Path(path_to_file).exists():
+        logger.error('User supplied an invalid file path')
         raise Exception('User supplied an invalid file path')
     try:
         # temp variables
@@ -51,4 +54,5 @@ def extract_file_properties(path_to_file: Path | str) -> tuple:
             md5_hash,
         )
     except Exception as e:
+        logger.error(f'Error occurred while extracting file metadata: {e}')
         raise Exception('Error occurred while extracting file metadata') from e

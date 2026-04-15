@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 
+from utils.logger import logger
+
 
 def cleanse_file_record(
     raw_record: tuple[Path, str, str, float, float, int, str],
@@ -28,8 +30,7 @@ def cleanse_file_record(
     if file_name:  # make sure file_name is not None
         illegal = find_illegal_characters_in_file_name(file_name)
         if illegal:
-            # TODO: replace with logger
-            print(f'{file_name} contains illegal characters: {illegal}')
+            logger.warning(f'{file_name} contains illegal characters: {illegal}')
 
     create_date = format_date(create_date)
     last_modified_date = format_date(last_modified_date)
@@ -74,12 +75,13 @@ def find_illegal_characters_in_file_name(file_name: str) -> list | None:
     ]
 
     if file_name.endswith('.'):
-        # TODO: log that the file ends with a period and it illegal
         illegal_characters.append('trailing period')
+        logger.warning(f'{file_name} has a trailing period')
 
     if illegal_characters:
-        # TODO: log that an illegal character was found in file name.
+        logger.warning(f'{file_name} contains illegal characters: {illegal_characters}')
         return illegal_characters
+
     return None
 
 
@@ -97,6 +99,5 @@ def format_date(ugly_date: float) -> str | None:
         formatted_date = clean_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         return formatted_date
     except Exception as e:
-        # TODO: replace print with logger
-        print(f'Issue found during date formatting {e}')
+        logger.warning(f'Issue found during date formatting {e}')
         return None

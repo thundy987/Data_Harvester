@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from utils.logger import logger
+
 
 def is_directories_empty(db_connection) -> bool:
     """Checks if the Directories table is empty. This should be empty before the pipeline writes to it.
@@ -22,6 +24,7 @@ def is_directories_empty(db_connection) -> bool:
             return False if cursor.fetchone() else True
 
     except Exception as e:
+        logger.error(f'Error querying Directories table: {e}')
         raise Exception('Error querying Directories table') from e
 
 
@@ -51,6 +54,7 @@ def populate_directories_table(db_connection, directory_record: dict) -> None:
             db_connection.commit()
 
     except Exception as e:
+        logger.error(f'Error writing to Directories table {e}')
         raise Exception('Error writing to Directories table') from e
 
 
@@ -75,6 +79,7 @@ def is_import_files_empty(db_connection) -> bool:
             return False if cursor.fetchone() else True
 
     except Exception as e:
+        logger.error(f'Error querying ImportFiles table {e}')
         raise Exception('Error querying ImportFiles table') from e
 
 
@@ -109,6 +114,7 @@ def populate_import_files_table(db_connection, file_record: dict) -> None:
             db_connection.commit()
 
     except Exception as e:
+        logger.error(f'Error writing to ImportFiles table {e}')
         raise Exception('Error writing to ImportFiles table') from e
 
 
@@ -133,6 +139,7 @@ def clear_files_and_folders_tables(db_connection) -> None:
 
             db_connection.commit()
     except Exception as e:
+        logger.error(f'Error clearing tables: {e}')
         raise Exception('Error clearing tables') from e
 
 
@@ -157,4 +164,5 @@ def log_activity(
 
             db_connection.commit()
     except Exception as e:
+        logger.error(f'Error executing Activity stored procedure: {e}')
         raise Exception('Error executing Activity stored procedure') from e

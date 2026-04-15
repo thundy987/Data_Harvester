@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from utils.logger import logger
+
 
 def walk_windows_fs(scan_root_directory: str) -> tuple[list[Path], list[Path]]:
     """
@@ -15,6 +17,7 @@ def walk_windows_fs(scan_root_directory: str) -> tuple[list[Path], list[Path]]:
         folder_list (list[Path]):
     """
     if not Path(scan_root_directory).exists():
+        logger.error('User supplied an invalid root path')
         raise Exception('User supplied an invalid root path')
     try:
         collection = list(Path(scan_root_directory).rglob('*'))
@@ -25,4 +28,5 @@ def walk_windows_fs(scan_root_directory: str) -> tuple[list[Path], list[Path]]:
 
         return file_list, folder_list
     except Exception as e:
+        logger.error(f'Error occurred during file scan: {e}')
         raise Exception('Error occurred during file scan') from e

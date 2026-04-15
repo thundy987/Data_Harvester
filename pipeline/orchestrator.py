@@ -11,6 +11,7 @@ from pipeline.transformer import cleanse_file_record
 from sources.windows_fs.metadata import extract_file_properties
 from sources.windows_fs.scanner import walk_windows_fs
 from utils.id_generator import create_document_id, create_project_id
+from utils.logger import logger
 
 
 # TODO walk_windows_fs() being called twice - call once and pass to both pipelines?
@@ -59,8 +60,7 @@ def run_directories_pipeline(db_connection, scan_root_directory: str) -> dict:
 
             lookup_dict[str(folder)] = directory_record['ProjectID']
         except Exception as e:
-            # TODO: replace with logger
-            print(f'Skipping folder {folder}: {e}')
+            logger.error(f'Skipping folder {folder}: {e}')
             continue
     return lookup_dict
 
@@ -103,7 +103,7 @@ def run_files_pipeline(
             populate_import_files_table(db_connection, file_record)
 
         except Exception as e:
-            print(f'Skipping file {file}: {e}')
+            logger.error(f'Skipping file {file}: {e}')
             continue
 
 
@@ -120,15 +120,21 @@ def run_pipeline(db_connection, scan_root_directory: str) -> None:
     """
     try:
         log_activity(db_connection, 'Start populating dbo.Directories')
+        logger.info('Start populating dbo.Directories')
         directory_lookup = run_directories_pipeline(db_connection, scan_root_directory)
         log_activity(db_connection, 'Finish populating dbo.Directories')
+        logger.info('Finish populating dbo.Directories')
     except Exception as e:
+        logger.error(f'Directories pipeline failed, no files loaded: {e}')
         raise Exception('Directories pipeline failed, no files loaded') from e
 
     try:
         log_activity(db_connection, 'Start populating dbo.ImportFiles')
+        logger.info('Start populating dbo.ImportFiles')
         run_files_pipeline(db_connection, scan_root_directory, directory_lookup)
         log_activity(db_connection, 'Finish populating dbo.ImportFiles')
+        logger.info('Finish populating dbo.ImportFiles')
 
     except Exception as e:
+        logger.error(f'Files pipeline failed: {e}')
         raise Exception('Files pipeline failed.') from e
