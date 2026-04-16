@@ -10,6 +10,7 @@ from db.repository import (
     is_import_files_empty,
 )
 from pipeline.orchestrator import run_pipeline
+from utils.logger import logger
 
 load_dotenv()
 
@@ -41,8 +42,13 @@ def main():
         default=os.getenv('PASSWORD'),
     )
     parser.add_argument('--clear', action='store_true', help='clears database tables')
+    parser.add_argument('--batch_size', type=int, default=1000)
 
     args = parser.parse_args()
+
+    if args.batch_size <= 0:
+        logger.error('User entered an invalid batch size. Program halted.')
+        raise Exception('Batch size must be larger than zero')
 
     db_connection = None  # guard against 'finally' running if connection fails
     try:
@@ -63,7 +69,7 @@ def main():
                 'ImportFiles table is not empty. Re-run with --clear to clear tables.'
             )
 
-        run_pipeline(db_connection, args.scan_root_directory)
+        run_pipeline(db_connection, args.scan_root_directory, args.batch_size)
 
     finally:
         if db_connection:

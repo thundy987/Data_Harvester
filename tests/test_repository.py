@@ -82,31 +82,36 @@ class TestIsImportFilesEmpty(unittest.TestCase):
 # ---------------------------------------------------------------------------
 class TestPopulateDirectoriesTable(unittest.TestCase):
 
-    def _make_record(self):
-        return {'ProjectID': 1, 'Name': 'TestFolder', 'Parent': 0}
+    def _make_batch(self):
+        return [(0, 1, 'TestFolder'), (1, 2, 'SubFolder')]
 
-    def test_executes_insert(self):
+    def test_uses_executemany(self):
         conn, cursor = _make_mock_connection()
-        populate_directories_table(conn, self._make_record())
-        cursor.execute.assert_called_once()
+        populate_directories_table(conn, self._make_batch())
+        cursor.executemany.assert_called_once()
+
+    def test_sets_fast_executemany(self):
+        conn, cursor = _make_mock_connection()
+        populate_directories_table(conn, self._make_batch())
+        self.assertTrue(cursor.fast_executemany)
+
+    def test_passes_batch_list(self):
+        conn, cursor = _make_mock_connection()
+        batch = self._make_batch()
+        populate_directories_table(conn, batch)
+        _, batch_passed = cursor.executemany.call_args[0]
+        self.assertEqual(batch_passed, batch)
 
     def test_commits_transaction(self):
         conn, _ = _make_mock_connection()
-        populate_directories_table(conn, self._make_record())
+        populate_directories_table(conn, self._make_batch())
         conn.commit.assert_called_once()
-
-    def test_passes_correct_values(self):
-        conn, cursor = _make_mock_connection()
-        record = self._make_record()
-        populate_directories_table(conn, record)
-        _, values = cursor.execute.call_args[0]
-        self.assertEqual(values, (1, 'TestFolder', 0))
 
     def test_raises_exception_on_db_error(self):
         conn, cursor = _make_mock_connection()
-        cursor.execute.side_effect = Exception('insert failed')
+        cursor.executemany.side_effect = Exception('insert failed')
         with self.assertRaises(Exception) as ctx:
-            populate_directories_table(conn, self._make_record())
+            populate_directories_table(conn, self._make_batch())
         self.assertIn('Error writing to Directories table', str(ctx.exception))
 
 
@@ -115,46 +120,39 @@ class TestPopulateDirectoriesTable(unittest.TestCase):
 # ---------------------------------------------------------------------------
 class TestPopulateImportFilesTable(unittest.TestCase):
 
-    def _make_record(self):
-        return {
-            'FileName': 'report.txt',
-            'DocumentID': 1,
-            'ProjectID': 2,
-            'ModifyDate': '2024-01-01T00:00:00.000',
-            'FolderPath': 'C:/some/folder',
-            'CreateDate': '2024-01-01T00:00:00.000',
-            'MD5': 'abc123',
-            'FileSize': 1024,
-        }
+    def _make_batch(self):
+        return [
+            ('report.txt', 1, 2, '2024-01-01T00:00:00.000', 'C:/some/folder', '2024-01-01T00:00:00.000', 'abc123', 1024),
+            ('data.csv', 2, 2, '2024-02-01T00:00:00.000', 'C:/some/folder', '2024-02-01T00:00:00.000', 'def456', 2048),
+        ]
 
-    def test_executes_insert(self):
+    def test_uses_executemany(self):
         conn, cursor = _make_mock_connection()
-        populate_import_files_table(conn, self._make_record())
-        cursor.execute.assert_called_once()
+        populate_import_files_table(conn, self._make_batch())
+        cursor.executemany.assert_called_once()
+
+    def test_sets_fast_executemany(self):
+        conn, cursor = _make_mock_connection()
+        populate_import_files_table(conn, self._make_batch())
+        self.assertTrue(cursor.fast_executemany)
+
+    def test_passes_batch_list(self):
+        conn, cursor = _make_mock_connection()
+        batch = self._make_batch()
+        populate_import_files_table(conn, batch)
+        _, batch_passed = cursor.executemany.call_args[0]
+        self.assertEqual(batch_passed, batch)
 
     def test_commits_transaction(self):
         conn, _ = _make_mock_connection()
-        populate_import_files_table(conn, self._make_record())
+        populate_import_files_table(conn, self._make_batch())
         conn.commit.assert_called_once()
-
-    def test_passes_correct_values(self):
-        conn, cursor = _make_mock_connection()
-        record = self._make_record()
-        populate_import_files_table(conn, record)
-        _, values = cursor.execute.call_args[0]
-        self.assertEqual(values, (
-            'report.txt', 1, 2,
-            '2024-01-01T00:00:00.000',
-            'C:/some/folder',
-            '2024-01-01T00:00:00.000',
-            'abc123', 1024,
-        ))
 
     def test_raises_exception_on_db_error(self):
         conn, cursor = _make_mock_connection()
-        cursor.execute.side_effect = Exception('insert failed')
+        cursor.executemany.side_effect = Exception('insert failed')
         with self.assertRaises(Exception) as ctx:
-            populate_import_files_table(conn, self._make_record())
+            populate_import_files_table(conn, self._make_batch())
         self.assertIn('Error writing to ImportFiles table', str(ctx.exception))
 
 

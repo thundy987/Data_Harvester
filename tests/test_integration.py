@@ -71,21 +71,14 @@ class TestTableStateChecks:
         assert is_import_files_empty(conn) is True
 
     def test_directories_not_empty_after_insert(self, conn):
-        populate_directories_table(conn, {'ProjectID': 1, 'Name': 'Root', 'Parent': 0})
+        populate_directories_table(conn, [(0, 1, 'Root')])
         assert is_directories_empty(conn) is False
 
     def test_import_files_not_empty_after_insert(self, conn):
-        populate_directories_table(conn, {'ProjectID': 1, 'Name': 'Root', 'Parent': 0})
-        populate_import_files_table(conn, {
-            'FileName': 'test.txt',
-            'DocumentID': 1,
-            'ProjectID': 1,
-            'ModifyDate': '2024-01-01T00:00:00.000',
-            'FolderPath': 'C:/root',
-            'CreateDate': '2024-01-01T00:00:00.000',
-            'MD5': 'abc123',
-            'FileSize': 100,
-        })
+        populate_directories_table(conn, [(0, 1, 'Root')])
+        populate_import_files_table(conn, [
+            ('test.txt', 1, 1, '2024-01-01T00:00:00.000', 'C:/root', '2024-01-01T00:00:00.000', 'abc123', 100),
+        ])
         assert is_import_files_empty(conn) is False
 
 
@@ -95,25 +88,18 @@ class TestTableStateChecks:
 class TestPopulateTables:
 
     def test_insert_directory_record(self, conn):
-        populate_directories_table(conn, {'ProjectID': 1, 'Name': 'Root', 'Parent': 0})
+        populate_directories_table(conn, [(0, 1, 'Root')])
         assert is_directories_empty(conn) is False
 
     def test_insert_file_record(self, conn):
-        populate_directories_table(conn, {'ProjectID': 1, 'Name': 'Root', 'Parent': 0})
-        populate_import_files_table(conn, {
-            'FileName': 'test.txt',
-            'DocumentID': 1,
-            'ProjectID': 1,
-            'ModifyDate': '2024-01-01T00:00:00.000',
-            'FolderPath': 'C:/root',
-            'CreateDate': '2024-01-01T00:00:00.000',
-            'MD5': 'abc123',
-            'FileSize': 100,
-        })
+        populate_directories_table(conn, [(0, 1, 'Root')])
+        populate_import_files_table(conn, [
+            ('test.txt', 1, 1, '2024-01-01T00:00:00.000', 'C:/root', '2024-01-01T00:00:00.000', 'abc123', 100),
+        ])
         assert is_import_files_empty(conn) is False
 
     def test_clear_empties_both_tables(self, conn):
-        populate_directories_table(conn, {'ProjectID': 1, 'Name': 'Root', 'Parent': 0})
+        populate_directories_table(conn, [(0, 1, 'Root')])
         clear_files_and_folders_tables(conn)
         assert is_directories_empty(conn) is True
         assert is_import_files_empty(conn) is True
@@ -149,20 +135,20 @@ class TestRunPipelineIntegration:
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_pipeline_populates_directories(self, conn):
-        run_pipeline(conn, self.tmp)
+        run_pipeline(conn, self.tmp, 1000)
         assert is_directories_empty(conn) is False
 
     def test_pipeline_populates_import_files(self, conn):
-        run_pipeline(conn, self.tmp)
+        run_pipeline(conn, self.tmp, 1000)
         assert is_import_files_empty(conn) is False
 
     def test_pipeline_raises_if_directories_not_empty(self, conn):
         """Second run without --clear should raise."""
-        run_pipeline(conn, self.tmp)
+        run_pipeline(conn, self.tmp, 1000)
         # Do NOT clear — simulate user forgetting --clear
         with pytest.raises(Exception):
-            run_pipeline(conn, self.tmp)
+            run_pipeline(conn, self.tmp, 1000)
 
     def test_pipeline_with_invalid_root_raises(self, conn):
         with pytest.raises(Exception):
-            run_pipeline(conn, 'C:/this/path/does/not/exist/xyz')
+            run_pipeline(conn, 'C:/this/path/does/not/exist/xyz', 1000)
