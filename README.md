@@ -200,13 +200,13 @@ Integration tests require credentials in `.env` and will wipe both target tables
 
 ## Limitations
 
-> V1 only supports Windows file systems, SQL Server authentication, and command-line execution. Inserts are row-by-row. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column.
+> V1 only supports Windows file systems, SQL Server authentication, and command-line execution. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column.
 
 ---
 
 ## Roadmap
 
-- [ ] v2 — Batch inserts with configurable batch size
+- [x] v2 — Batch inserts with `--batch_size` argument (default: 1000)
 - [ ] v2 — Windows Authentication support
 - [ ] v2 — Abstract base class for source systems (`sources/base.py`)
 - [ ] v2 — SolidWorks Document Manager integration for custom file properties
