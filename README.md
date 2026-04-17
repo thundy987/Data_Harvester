@@ -206,14 +206,16 @@ Integration tests require credentials in `.env` and will wipe both target tables
 
 ## Roadmap
 
-- [x] v2 — Batch inserts with `--batch_size` argument (default: 1000)
-- [ ] v2 — Windows Authentication support
-- [x] v2 — Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
-- [ ] v2 — SolidWorks Document Manager integration for custom file properties
-- [ ] v3 — Incremental/delta load support
-- [ ] v3 — Resume capability after mid-run failure
-- [ ] v3 — Additional source systems (SolidWorks PDM, Windchill)
-- [ ] v3 — GUI
+- [x] v2 - Batch inserts with `--batch_size` argument (default: 1000)
+- [x] v2 - Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
+- [ ] v2 - CSVFile source handling
+- [ ] v2 - SQL database source handling
+- [ ] v2 - API source handling
+- [ ] v3 - SolidWorks Document Manager integration for custom file properties
+- [ ] v3 - Incremental/delta load support
+- [ ] v3 - Resume capability after mid-run failure
+- [ ] v3 - Additional source systems (SolidWorks PDM, Windchill)
+- [ ] v3 - GUI
 
 ---
 
