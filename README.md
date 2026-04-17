@@ -208,7 +208,7 @@ Integration tests require credentials in `.env` and will wipe both target tables
 
 - [x] v2 — Batch inserts with `--batch_size` argument (default: 1000)
 - [ ] v2 — Windows Authentication support
-- [ ] v2 — Abstract base class for source systems (`sources/base.py`)
+- [x] v2 — Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
 - [ ] v2 — SolidWorks Document Manager integration for custom file properties
 - [ ] v3 — Incremental/delta load support
 - [ ] v3 — Resume capability after mid-run failure
