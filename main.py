@@ -10,6 +10,7 @@ from db.repository import (
     is_import_files_empty,
 )
 from pipeline.orchestrator import run_pipeline
+from sources.windows_fs.WindowsFS import WindowsFS
 from utils.logger import logger
 
 load_dotenv()
@@ -69,7 +70,9 @@ def main():
                 'ImportFiles table is not empty. Re-run with --clear to clear tables.'
             )
 
-        run_pipeline(db_connection, args.scan_root_directory, args.batch_size)
+        source = WindowsFS()
+
+        run_pipeline(db_connection, args.scan_root_directory, args.batch_size, source)
 
     finally:
         if db_connection:

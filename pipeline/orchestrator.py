@@ -8,8 +8,7 @@ from db.repository import (
     populate_import_files_table,
 )
 from pipeline.transformer import cleanse_file_record
-from sources.windows_fs.metadata import extract_file_properties
-from sources.windows_fs.scanner import walk_windows_fs
+from sources.base import SourceSystem
 from utils.id_generator import create_document_id, create_project_id
 from utils.logger import logger
 
@@ -98,7 +97,11 @@ def run_directories_pipeline(
 
 
 def run_files_pipeline(
-    db_connection, all_files: list, directory_lookup: dict, batch_size: int
+    db_connection,
+    all_files: list,
+    directory_lookup: dict,
+    batch_size: int,
+    source: SourceSystem,
 ) -> None:
     """Populates the ImportFiles table using the cleaned up data and the ProjectID from run_directories_pipeline()
 
@@ -106,6 +109,8 @@ def run_files_pipeline(
         db_connection (Connection): Connection details for the target db.
         all_files (list): The files being harvested and loaded.
         directory_lookup (dict): Directories dictionary to provide ProjectID
+        batch_size (int): How many records to load into the batch insert statement.
+        source (SourceSystem): The data source object.
 
     Raises:
         Exception: raise Exception('ImportFiles table is not empty')
@@ -118,7 +123,7 @@ def run_files_pipeline(
 
     for file in all_files:
         try:
-            props_dirty = extract_file_properties(file)
+            props_dirty = source.extract_properties(file)
 
             props_clean = cleanse_file_record(props_dirty)
 
@@ -162,19 +167,23 @@ def run_files_pipeline(
         logger.info(f'Flushing batch of {batch_size} file records to database')
 
 
-def run_pipeline(db_connection, scan_root_directory: str, batch_size: int) -> None:
+def run_pipeline(
+    db_connection, scan_root_directory: str, batch_size: int, source: SourceSystem
+) -> None:
     """Executes the full loading pipeline into the target db.
 
     Args:
         db_connection (Connection): Connection details for the target db.
         scan_root_directory (str): The directory being harvested and loaded.
+        batch_size (int): How many records to load into the batch insert statement.
+        source (SourceSystem): The data source object.
 
     Raises:
         Exception: 'Directories pipeline failed, no files loaded'
         Exception: 'Files pipeline failed.'
     """
     try:
-        all_files, all_folders = walk_windows_fs(scan_root_directory)
+        all_files, all_folders = source.fetch_data(scan_root_directory)
         log_activity(db_connection, 'Start populating dbo.Directories')
         logger.info('Start populating dbo.Directories')
         directory_lookup = run_directories_pipeline(
@@ -189,7 +198,9 @@ def run_pipeline(db_connection, scan_root_directory: str, batch_size: int) -> No
     try:
         log_activity(db_connection, 'Start populating dbo.ImportFiles')
         logger.info('Start populating dbo.ImportFiles')
-        run_files_pipeline(db_connection, all_files, directory_lookup, batch_size)
+        run_files_pipeline(
+            db_connection, all_files, directory_lookup, batch_size, source
+        )
         log_activity(db_connection, 'Finish populating dbo.ImportFiles')
         logger.info('Finish populating dbo.ImportFiles')
 
