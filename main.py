@@ -18,12 +18,12 @@ load_dotenv()
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Script scans a windows file system, cleanses data, and loads it into a database'
+        description='Script scans a data source, cleanses data, and loads it into a database'
     )
 
     parser.add_argument(
-        '--scan_root_directory',
-        help='the root directory to be scanned',
+        '--source_location',
+        help='the source of the data to be scanned',
         default=os.getenv('ROOT'),
     )
     parser.add_argument(
@@ -70,9 +70,9 @@ def main():
                 'ImportFiles table is not empty. Re-run with --clear to clear tables.'
             )
 
-        source = WindowsFS()
+        source = WindowsFS(args.source_location)
 
-        run_pipeline(db_connection, args.scan_root_directory, args.batch_size, source)
+        run_pipeline(db_connection, args.batch_size, source)
 
     finally:
         if db_connection:

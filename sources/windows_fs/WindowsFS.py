@@ -6,34 +6,52 @@ from utils.logger import logger
 
 
 class WindowsFS(SourceSystem):
-    def fetch_data(self, scan_root_directory: str) -> tuple[list[Path], list[Path]]:
+    def __init__(self, source_location: str):
         """
-        Discovers all subfolders and files contained within a given root directory.
+        Initializes the WindowFS scanner and discovers all subfolders and files contained within a given root directory.
         Args:
             scan_root_directory (str): the root directory to be scanned.
+
+        Attributes:
+            file_list (list[Path]): All file objects found under the root.
+            folder_list (list[Path]): All directory objects found under the root.
+
         Raises:
-            Exception: 'User supplied an invalid root path'
-            Exception: 'Error occurred during file scan'
+            FileNotFoundError: 'User supplied an invalid root path'
+            RuntimeError: 'Error occurred during file scan'
 
-        Returns:
-            file_list (list[Path]):
-            folder_list (list[Path]):
         """
+        # Store value in 'private backing variabe' to avoid recursion calling the base class property.
+        self._source_location = source_location
 
-        if not Path(scan_root_directory).exists():
+        if not Path(source_location).exists():
             logger.error('User supplied an invalid root path')
-            raise Exception('User supplied an invalid root path')
+            raise FileNotFoundError(f'Root path not found: {source_location}')
         try:
-            collection = list(Path(scan_root_directory).rglob('*'))
+            collection = list(Path(source_location).rglob('*'))
 
-            file_list = [f for f in collection if f.is_file()]
+            self.file_list = [f for f in collection if f.is_file()]
 
-            folder_list = [f for f in collection if f.is_dir()]
+            self.folder_list = [f for f in collection if f.is_dir()]
 
-            return file_list, folder_list
         except Exception as e:
             logger.error(f'Error occurred during file scan: {e}')
-            raise Exception('Error occurred during file scan') from e
+            raise RuntimeError('Error occurred during file scan') from e
+
+    @property
+    def source_location(self) -> str:
+        """
+        Root directory path provided at instantiation. Returns the private backing variable to satisfy the SourceSystem abstract property contract.
+        """
+        return self._source_location
+
+    def fetch_data(self) -> tuple[list[Path], list[Path]]:
+        """Retrieves the lists of discovered files and folders.
+
+        Returns:
+            tuple[list[Path], list[Path]]: A tuple containing (file_list, folder_list).
+        """
+        return self.file_list, self.folder_list
 
     def extract_properties(self, path_to_file: Path | str) -> tuple:
         """Extracts meta data from a file, given the path of the file.
@@ -42,7 +60,7 @@ class WindowsFS(SourceSystem):
             path_to_file (Path | str): path to the file.
 
         Raises:
-            Exception: 'User supplied an invalid file path'
+            FileNotFoundError: 'User supplied an invalid file path'
             Exception: 'Error occurred while extracting file metadata'
 
         Returns:
@@ -57,7 +75,7 @@ class WindowsFS(SourceSystem):
 
         if not Path(path_to_file).exists():
             logger.error('User supplied an invalid file path')
-            raise Exception('User supplied an invalid file path')
+            raise FileNotFoundError(f'File path not found: {path_to_file}')
         try:
             # temp variables
             target_file = Path(path_to_file)
@@ -87,4 +105,4 @@ class WindowsFS(SourceSystem):
             )
         except Exception as e:
             logger.error(f'Error occurred while extracting file metadata: {e}')
-            raise Exception('Error occurred while extracting file metadata') from e
+            raise RuntimeError('Error occurred while extracting file metadata') from e

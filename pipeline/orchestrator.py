@@ -14,13 +14,13 @@ from utils.logger import logger
 
 
 def run_directories_pipeline(
-    db_connection, scan_root_directory: str, all_folders: list, batch_size: int
+    db_connection, source_location: str, all_folders: list, batch_size: int
 ) -> dict:
     """Creates a list of tuples that's sent to populate_directories_table when the batch_size is full.
 
     Args:
         db_connection (Connection): Connection details for the target db.
-        scan_root_directory (str): The directory being harvested and loaded (needed for root folder(s)).
+        source_location (str): The directory being harvested and loaded (needed for root folder(s)).
         all_folders (list): list of all folders in the scan.
         batch_size (int): How many records to load into the batch insert statement.
 
@@ -42,11 +42,11 @@ def run_directories_pipeline(
     directory_record = {
         'Parent': 0,
         'ProjectID': create_project_id(),
-        'Name': Path(scan_root_directory).name,
+        'Name': Path(source_location).name,
     }
 
     # store {folder_path: ProjectID} for reference
-    lookup_dict[scan_root_directory] = directory_record['ProjectID']
+    lookup_dict[source_location] = directory_record['ProjectID']
 
     # batch inserting with executemany() requires a list of tuples
     batch_list = [
@@ -167,14 +167,11 @@ def run_files_pipeline(
         logger.info(f'Flushing batch of {batch_size} file records to database')
 
 
-def run_pipeline(
-    db_connection, scan_root_directory: str, batch_size: int, source: SourceSystem
-) -> None:
+def run_pipeline(db_connection, batch_size: int, source: SourceSystem) -> None:
     """Executes the full loading pipeline into the target db.
 
     Args:
         db_connection (Connection): Connection details for the target db.
-        scan_root_directory (str): The directory being harvested and loaded.
         batch_size (int): How many records to load into the batch insert statement.
         source (SourceSystem): The data source object.
 
@@ -183,11 +180,11 @@ def run_pipeline(
         Exception: 'Files pipeline failed.'
     """
     try:
-        all_files, all_folders = source.fetch_data(scan_root_directory)
+        all_files, all_folders = source.fetch_data()
         log_activity(db_connection, 'Start populating dbo.Directories')
         logger.info('Start populating dbo.Directories')
         directory_lookup = run_directories_pipeline(
-            db_connection, scan_root_directory, all_folders, batch_size
+            db_connection, source.source_location, all_folders, batch_size
         )
         log_activity(db_connection, 'Finish populating dbo.Directories')
         logger.info('Finish populating dbo.Directories')

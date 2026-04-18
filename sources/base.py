@@ -3,8 +3,13 @@ from pathlib import Path
 
 
 class SourceSystem(ABC):
+    @property  # Pretend this attribute is a function
     @abstractmethod
-    def fetch_data(self, scan_root_directory: str) -> tuple[list[Path], list[Path]]:
+    def source_location(self) -> str:
+        pass
+
+    @abstractmethod
+    def fetch_data(self) -> tuple[list[Path], list[Path]]:
         pass
 
     @abstractmethod

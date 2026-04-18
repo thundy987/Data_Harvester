@@ -123,16 +123,6 @@ data-harvester/
 ├── utils/
 │   ├── id_generator.py      # Generates folder and file IDs
 │   └── logger.py            # Writes logs to file and console
-├── tests/
-│   ├── conftest.py          # Shared fixtures
-│   ├── dummy_data/          # Static files with known MD5s for testing
-│   ├── test_id_generator.py
-│   ├── test_transformer.py
-│   ├── test_scanner.py
-│   ├── test_metadata.py
-│   ├── test_repository.py
-│   ├── test_orchestrator.py
-│   └── test_integration.py
 ├── requirements.txt
 └── README.md
 ```
@@ -180,24 +170,6 @@ python main.py
 
 ---
 
-## Running Tests
-
-```bash
-python -m pytest
-```
-
-Unit tests run by default and do not require a database connection. They use mocked connections to verify SQL calls, parameters, and error handling.
-
-To run integration tests against a live SQL Server instance:
-
-```bash
-python -m pytest -m integration
-```
-
-Integration tests require credentials in `.env` and will wipe both target tables on every run. Use a test database.
-
----
-
 ## Limitations
 
 > V1 only supports Windows file systems, SQL Server authentication, and command-line execution. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column.
@@ -208,7 +180,6 @@ Integration tests require credentials in `.env` and will wipe both target tables
 
 - [x] v2 - Batch inserts with `--batch_size` argument (default: 1000)
 - [x] v2 - Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
-- [ ] v2 - CSVFile source handling
 - [ ] v2 - SQL database source handling
 - [ ] v2 - API source handling
 - [ ] v3 - SolidWorks Document Manager integration for custom file properties
@@ -222,5 +193,5 @@ Integration tests require credentials in `.env` and will wipe both target tables
 ## AI Usage Disclaimer
 
 - Claude was used as a mentor and search utility, not a code generator.
-- All code was written by me except the tests.
+- All code was written by me and only after I could clearly explain it.
 - It was used to explain concepts and ask questions that pushed me to think through problems before writing any code.
