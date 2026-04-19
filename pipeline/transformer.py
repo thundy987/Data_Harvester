@@ -1,50 +1,6 @@
 from datetime import datetime
-from pathlib import Path
 
 from utils.logger import logger
-
-
-def cleanse_file_record(
-    raw_record: tuple[Path, str, str, float, float, int, str],
-) -> dict:
-    """Executes cleansing functions on a tuple of file properties and returns the values as a dictionary.
-
-    Args:
-        raw_record (tuple): metadata of a harvested file
-
-    Returns:
-        dict: metadata properties defined as dictionary
-    """
-    (
-        parent_folder,
-        file_name,
-        file_extension,
-        create_date,
-        last_modified_date,
-        file_size,
-        md5_hash,
-    ) = raw_record
-
-    file_name = remove_white_spaces(file_name)
-
-    if file_name:  # make sure file_name is not None
-        illegal = find_illegal_characters_in_file_name(file_name)
-        if illegal:
-            logger.warning(f'{file_name} contains illegal characters: {illegal}')
-
-    create_date = format_date(create_date)
-    last_modified_date = format_date(last_modified_date)
-
-    # convert tuple to dictionary to use upstream
-    return {
-        'FolderPath': str(parent_folder),
-        'FileName': file_name,
-        'file_extension': file_extension,  # variable not used by migration db, left it as snake_case format.
-        'CreateDate': create_date,
-        'ModifyDate': last_modified_date,
-        'FileSize': file_size,
-        'MD5': md5_hash,
-    }
 
 
 def remove_white_spaces(text: str) -> str | None:

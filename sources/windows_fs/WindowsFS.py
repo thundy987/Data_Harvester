@@ -1,7 +1,11 @@
 import hashlib
 from pathlib import Path
 
-from pipeline.transformer import cleanse_file_record
+from pipeline.transformer import (
+    find_illegal_characters_in_file_name,
+    format_date,
+    remove_white_spaces,
+)
 from sources.base import SourceSystem
 from utils.logger import logger
 
@@ -76,7 +80,7 @@ class WindowsFS(SourceSystem):
             try:
                 props_dirty = self._extract_properties(file)
 
-                props_clean = cleanse_file_record(props_dirty)
+                props_clean = self._cleanse_record(props_dirty)
                 file_records.append(
                     {
                         'FileName': props_clean['FileName'],
@@ -92,7 +96,7 @@ class WindowsFS(SourceSystem):
                 continue
         return (directory_records, file_records)
 
-    def _extract_properties(self, path_to_file: Path | str) -> tuple:
+    def _extract_properties(self, path_to_file: Path | str) -> dict:
         """Extracts meta data from a file, given the path of the file.
 
         Args:
@@ -103,12 +107,7 @@ class WindowsFS(SourceSystem):
             OSError: If reading file metadata or computing the checksum fails.
 
         Returns:
-            parent_folder (str): the folder in which the file lives.
-            file_name (str): the file name including extension (without folder path).
-            create_date (float): Unix format date when file was created
-            last_modified_date (float): Unix format date when file was last modified
-            file_size (int): file size in bytes
-            md5_hash (str): MD5 hash checksum of file.
+            dict: metadata properties defined as dictionary
         """
 
         if not Path(path_to_file).exists():
@@ -121,7 +120,6 @@ class WindowsFS(SourceSystem):
             # real variables
             parent_folder = target_file.parent
             file_name = target_file.name
-            file_extension = target_file.suffix
             create_date = file_stats.st_birthtime
             last_modified_date = file_stats.st_mtime
             file_size = file_stats.st_size
@@ -131,15 +129,42 @@ class WindowsFS(SourceSystem):
                 h = hashlib.file_digest(f, 'md5')
                 md5_hash = h.hexdigest()
 
-            return (
-                parent_folder,
-                file_name,
-                file_extension,
-                create_date,
-                last_modified_date,
-                file_size,
-                md5_hash,
-            )
+            return {
+                'FolderPath': str(parent_folder),
+                'FileName': file_name,
+                'CreateDate': create_date,
+                'ModifyDate': last_modified_date,
+                'FileSize': file_size,
+                'MD5': md5_hash,
+            }
         except OSError as e:
             logger.error(f'Failed to extract metadata from {path_to_file}: {e}')
             raise
+
+    def _cleanse_record(self, raw_metadeta: dict) -> dict:
+        """Exectues cleansing functions as needed on the source data to conform to target data model.
+
+        Args:
+            raw_metadeta (dict): metadata of a harvested file
+
+        Returns:
+            dict: cleansed metadata of the file
+        """
+        file_name = remove_white_spaces(raw_metadeta['FileName'])
+
+        if file_name:  # make sure file_name is not None
+            illegal = find_illegal_characters_in_file_name(file_name)
+            if illegal:
+                logger.warning(f'{file_name} contains illegal characters: {illegal}')
+
+        create_date = format_date(raw_metadeta['CreateDate'])
+        modify_date = format_date(raw_metadeta['ModifyDate'])
+
+        return {
+            'FileName': file_name,
+            'ModifyDate': modify_date,
+            'FolderPath': raw_metadeta['FolderPath'],
+            'CreateDate': create_date,
+            'MD5': raw_metadeta['MD5'],
+            'FileSize': raw_metadeta['FileSize'],
+        }
