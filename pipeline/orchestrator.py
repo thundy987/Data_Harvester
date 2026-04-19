@@ -7,21 +7,20 @@ from db.repository import (
     populate_directories_table,
     populate_import_files_table,
 )
-from pipeline.transformer import cleanse_file_record
 from sources.base import SourceSystem
 from utils.id_generator import create_document_id, create_project_id
 from utils.logger import logger
 
 
 def run_directories_pipeline(
-    db_connection, source_location: str, all_folders: list, batch_size: int
+    db_connection, source_location: str, directory_records: list, batch_size: int
 ) -> dict:
-    """Creates a list of tuples that's sent to populate_directories_table when the batch_size is full.
+    """Creates dict that's sent to populate_directories_table when the batch_size is full.
 
     Args:
         db_connection (Connection): Connection details for the target db.
         source_location (str): The directory being harvested and loaded (needed for root folder(s)).
-        all_folders (list): list of all folders in the scan.
+        directory_records (list): list of all folders in the scan.
         batch_size (int): How many records to load into the batch insert statement.
 
     Raises:
@@ -33,8 +32,6 @@ def run_directories_pipeline(
     if not is_directories_empty(db_connection):
         logger.error('Directories table is not empty')
         raise Exception('Directories table is not empty')
-
-    sorted_folders = sorted(all_folders, key=lambda p: len(p.parts))
 
     lookup_dict = {}
 
@@ -58,14 +55,15 @@ def run_directories_pipeline(
     ]
 
     # iterate subfolders
-    for folder in sorted_folders:
+    for folder in directory_records:
         try:
-            parent_folder = folder.parent
+            # folder is now a dict that be directly accessed.
+            parent_folder = folder['Path'].parent
 
             directory_record = {
                 'Parent': lookup_dict.get(str(parent_folder), 0),
                 'ProjectID': create_project_id(),
-                'Name': folder.name,
+                'Name': folder['Name'],
             }
 
             # convert dict record to tuple and append to list
@@ -84,7 +82,7 @@ def run_directories_pipeline(
                 )
                 batch_list = []
 
-            lookup_dict[str(folder)] = directory_record['ProjectID']
+            lookup_dict[str(folder['Path'])] = directory_record['ProjectID']
 
         except Exception as e:
             logger.error(f'Skipping folder {folder}: {e}')
@@ -98,19 +96,17 @@ def run_directories_pipeline(
 
 def run_files_pipeline(
     db_connection,
-    all_files: list,
+    file_records: list,
     directory_lookup: dict,
     batch_size: int,
-    source: SourceSystem,
 ) -> None:
     """Populates the ImportFiles table using the cleaned up data and the ProjectID from run_directories_pipeline()
 
     Args:
         db_connection (Connection): Connection details for the target db.
-        all_files (list): The files being harvested and loaded.
+        file_records (list): The files being harvested and loaded.
         directory_lookup (dict): Directories dictionary to provide ProjectID
         batch_size (int): How many records to load into the batch insert statement.
-        source (SourceSystem): The data source object.
 
     Raises:
         Exception: raise Exception('ImportFiles table is not empty')
@@ -121,21 +117,18 @@ def run_files_pipeline(
 
     batch_list = []
 
-    for file in all_files:
+    for file in file_records:
         try:
-            props_dirty = source.extract_properties(file)
-
-            props_clean = cleanse_file_record(props_dirty)
-
+            # file is now a dict that be directly accessed.
             file_record = {
-                'FileName': props_clean['FileName'],
+                'FileName': file['FileName'],
                 'DocumentID': create_document_id(),
-                'ProjectID': directory_lookup[props_clean['FolderPath']],
-                'ModifyDate': props_clean['ModifyDate'],
-                'FolderPath': props_clean['FolderPath'],
-                'CreateDate': props_clean['CreateDate'],
-                'MD5': props_clean['MD5'],
-                'FileSize': props_clean['FileSize'],
+                'ProjectID': directory_lookup[file['FolderPath']],
+                'ModifyDate': file['ModifyDate'],
+                'FolderPath': file['FolderPath'],
+                'CreateDate': file['CreateDate'],
+                'MD5': file['MD5'],
+                'FileSize': file['FileSize'],
             }
 
             # convert dict record to tuple and append to list
@@ -167,7 +160,11 @@ def run_files_pipeline(
         logger.info(f'Flushing batch of {batch_size} file records to database')
 
 
-def run_pipeline(db_connection, batch_size: int, source: SourceSystem) -> None:
+def run_pipeline(
+    db_connection,
+    batch_size: int,
+    source: SourceSystem,
+) -> None:
     """Executes the full loading pipeline into the target db.
 
     Args:
@@ -180,11 +177,11 @@ def run_pipeline(db_connection, batch_size: int, source: SourceSystem) -> None:
         Exception: 'Files pipeline failed.'
     """
     try:
-        all_files, all_folders = source.fetch_data()
+        directory_records, file_records = source.fetch_data()
         log_activity(db_connection, 'Start populating dbo.Directories')
         logger.info('Start populating dbo.Directories')
         directory_lookup = run_directories_pipeline(
-            db_connection, source.source_location, all_folders, batch_size
+            db_connection, source.source_location, directory_records, batch_size
         )
         log_activity(db_connection, 'Finish populating dbo.Directories')
         logger.info('Finish populating dbo.Directories')
@@ -195,9 +192,7 @@ def run_pipeline(db_connection, batch_size: int, source: SourceSystem) -> None:
     try:
         log_activity(db_connection, 'Start populating dbo.ImportFiles')
         logger.info('Start populating dbo.ImportFiles')
-        run_files_pipeline(
-            db_connection, all_files, directory_lookup, batch_size, source
-        )
+        run_files_pipeline(db_connection, file_records, directory_lookup, batch_size)
         log_activity(db_connection, 'Finish populating dbo.ImportFiles')
         logger.info('Finish populating dbo.ImportFiles')
 

@@ -1,6 +1,7 @@
 import hashlib
 from pathlib import Path
 
+from pipeline.transformer import cleanse_file_record
 from sources.base import SourceSystem
 from utils.logger import logger
 
@@ -10,7 +11,7 @@ class WindowsFS(SourceSystem):
         """
         Initializes the WindowFS scanner and discovers all subfolders and files contained within a given root directory.
         Args:
-            scan_root_directory (str): the root directory to be scanned.
+            source_location (str): the root directory to be scanned.
 
         Attributes:
             file_list (list[Path]): All file objects found under the root.
@@ -45,15 +46,53 @@ class WindowsFS(SourceSystem):
         """
         return self._source_location
 
-    def fetch_data(self) -> tuple[list[Path], list[Path]]:
-        """Retrieves the lists of discovered files and folders.
+    def fetch_data(self) -> tuple[list[dict], list[dict]]:
+        """Collects folder and file information from the source location.
 
         Returns:
-            tuple[list[Path], list[Path]]: A tuple containing (file_list, folder_list).
+            tuple[list[dict], list[dict]]: The directories and files with their properties.
         """
-        return self.file_list, self.folder_list
+        ######## Folder Work ########
+        sorted_folders = sorted(self.folder_list, key=lambda p: len(p.parts))
 
-    def extract_properties(self, path_to_file: Path | str) -> tuple:
+        directory_records = []
+
+        for folder in sorted_folders:
+            try:
+                directory_records.append(
+                    {
+                        'Path': folder,
+                        'Name': folder.name,
+                    }
+                )
+            except Exception as e:
+                logger.error(f'Skipping folder {folder}: {e}')
+                continue
+
+        ######## File Work ########
+        file_records = []
+
+        for file in self.file_list:
+            try:
+                props_dirty = self._extract_properties(file)
+
+                props_clean = cleanse_file_record(props_dirty)
+                file_records.append(
+                    {
+                        'FileName': props_clean['FileName'],
+                        'ModifyDate': props_clean['ModifyDate'],
+                        'FolderPath': props_clean['FolderPath'],
+                        'CreateDate': props_clean['CreateDate'],
+                        'MD5': props_clean['MD5'],
+                        'FileSize': props_clean['FileSize'],
+                    }
+                )
+            except Exception as e:
+                logger.error(f'Skipping file {file}: {e}')
+                continue
+        return (directory_records, file_records)
+
+    def _extract_properties(self, path_to_file: Path | str) -> tuple:
         """Extracts meta data from a file, given the path of the file.
 
         Args:
@@ -66,7 +105,6 @@ class WindowsFS(SourceSystem):
         Returns:
             parent_folder (str): the folder in which the file lives.
             file_name (str): the file name including extension (without folder path).
-            file_extension (str): the file extension
             create_date (float): Unix format date when file was created
             last_modified_date (float): Unix format date when file was last modified
             file_size (int): file size in bytes
