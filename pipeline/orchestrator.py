@@ -24,14 +24,14 @@ def run_directories_pipeline(
         batch_size (int): How many records to load into the batch insert statement.
 
     Raises:
-        Exception: 'Directories table is not empty'
+        RuntimeError: If the Directories table is not empty.
 
     Returns:
         lookup_dict: A dictionary with {full_path: ProjectID} form.
     """
     if not is_directories_empty(db_connection):
         logger.error('Directories table is not empty')
-        raise Exception('Directories table is not empty')
+        raise RuntimeError('Directories table is not empty. Re-run with --clear to clear tables.')
 
     lookup_dict = {}
 
@@ -85,7 +85,7 @@ def run_directories_pipeline(
             lookup_dict[str(folder['Path'])] = directory_record['ProjectID']
 
         except Exception as e:
-            logger.error(f'Skipping folder {folder}: {e}')
+            logger.warning(f'Skipping folder {folder}: {e}')
             continue
     # push any remaining records if batch size not reached
     if batch_list:
@@ -109,11 +109,11 @@ def run_files_pipeline(
         batch_size (int): How many records to load into the batch insert statement.
 
     Raises:
-        Exception: raise Exception('ImportFiles table is not empty')
+        RuntimeError: If the ImportFiles table is not empty.
     """
     if not is_import_files_empty(db_connection):
         logger.error('ImportFiles table is not empty')
-        raise Exception('ImportFiles table is not empty')
+        raise RuntimeError('ImportFiles table is not empty. Re-run with --clear to clear tables.')
 
     batch_list = []
 
@@ -152,7 +152,7 @@ def run_files_pipeline(
                 batch_list = []
 
         except Exception as e:
-            logger.error(f'Skipping file {file}: {e}')
+            logger.warning(f'Skipping file {file}: {e}')
             continue
     # push any remaining records if batch size not reached
     if batch_list:
@@ -173,8 +173,7 @@ def run_pipeline(
         source (SourceSystem): The data source object.
 
     Raises:
-        Exception: 'Directories pipeline failed, no files loaded'
-        Exception: 'Files pipeline failed.'
+        RuntimeError: If the directories or files pipeline fails.
     """
     try:
         directory_records, file_records = source.fetch_data()
@@ -187,7 +186,7 @@ def run_pipeline(
         logger.info('Finish populating dbo.Directories')
     except Exception as e:
         logger.error(f'Directories pipeline failed, no files loaded: {e}')
-        raise Exception('Directories pipeline failed, no files loaded') from e
+        raise RuntimeError('Directories pipeline failed, no files loaded') from e
 
     try:
         log_activity(db_connection, 'Start populating dbo.ImportFiles')
@@ -198,4 +197,4 @@ def run_pipeline(
 
     except Exception as e:
         logger.error(f'Files pipeline failed: {e}')
-        raise Exception('Files pipeline failed.') from e
+        raise RuntimeError('Files pipeline failed') from e

@@ -48,8 +48,8 @@ def main():
     args = parser.parse_args()
 
     if args.batch_size <= 0:
-        logger.error('User entered an invalid batch size. Program halted.')
-        raise Exception('Batch size must be larger than zero')
+        logger.error(f'Invalid batch size: {args.batch_size}')
+        raise ValueError(f'Batch size must be a positive integer, got {args.batch_size}')
 
     db_connection = None  # guard against 'finally' running if connection fails
     try:
@@ -61,12 +61,12 @@ def main():
             clear_files_and_folders_tables(db_connection)
 
         if not is_directories_empty(db_connection):
-            raise Exception(
+            raise RuntimeError(
                 'Directories table is not empty. Re-run with --clear to clear tables.'
             )
 
         if not is_import_files_empty(db_connection):
-            raise Exception(
+            raise RuntimeError(
                 'ImportFiles table is not empty. Re-run with --clear to clear tables.'
             )
 

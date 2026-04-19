@@ -3,7 +3,7 @@
 A Python ETL pipeline that scans a Windows file system, extracts file and folder metadata, and loads it into a SQL Server migration database. This is the data collection layer of a broader SolidWorks PDM migration workflow.
 
 ```
-Windows File System → [data-harvester] → SQL Server Migration DB → XML Export Tool → PDM Vault
+Source System → [data-harvester] → SQL Server Migration DB → XML Export Tool → PDM Vault
 ```
 
 ---
@@ -28,7 +28,7 @@ Coming from SQL, I was used to everything living in one place. Splitting logic a
 <details>
 <summary><strong>2. Separating Concerns</strong></summary>
 
-My first instinct was to extract metadata and clean it in the same function. I pulled those apart so that scanning, transformation, and database writes are each handled independently. This made the code easier to change without breaking something else.
+My first instinct was to extract metadata and clean it in the same function. I pulled those apart so that each source class owns its own extraction and transformation, and the pipeline only handles loading. This made it possible to add new source types without changing the pipeline.
 
 </details>
 
@@ -54,16 +54,11 @@ Early on I was passing data around as tuples because that felt simple. As the pi
 </details>
 
 <details>
-<summary><strong>6. Knowing What to Leave Out</strong></summary>
+<summary><strong>6. Abstract Base Classes</strong></summary>
 
-I had to be honest about what I could actually build well in v1 vs what I should park for later. Batch inserts and Windows Authentication are the right next steps, but shipping a working, well-structured v1 first was the right call over trying to build everything at once and finishing nothing.
+When I refactored the project to support multiple source types, I had to figure out what belonged in a shared contract vs what was specific to Windows file systems. Methods like `fetch_data()` that return a standard shape belong in the contract. Methods like `_extract_properties()` that use `rglob()` and `hashlib` belong in the implementation. Getting that boundary wrong would mean the next source type either can't conform to the contract or has to fight it.
 
-</details>
-
-<details>
-<summary><strong>7. MD5 Checksums</strong></summary>
-
-I needed a way to detect duplicate files across a source system. MD5 is not cryptographically secure but it is fast and good enough for file deduplication in this context. I used Python's `hashlib.file_digest()` which reads the file in chunks and avoids loading large files fully into memory.
+The Python mechanics were a separate challenge. I had never worked with `ABC`, `@abstractmethod`, or `@property` before. Understanding how a parent class enforces structure on its children without dictating behavior took time and a lot of reading the docs and examples.
 
 </details>
 
@@ -71,11 +66,15 @@ I needed a way to detect duplicate files across a source system. MD5 is not cryp
 
 ## Design Decisions
 
-### Transformation in Python, not SQL
+### Transformation in the Source, not SQL
 
-All data cleansing happens in the Python pipeline before anything is written to the database. The Migration DB is a load target, not a transformation workspace. This keeps business logic version-controlled and testable.
+All data cleansing happens in the source class before anything is passed to the pipeline. Each source is responsible for extracting its own data and transforming it into the format the pipeline expects. This keeps business logic version-controlled, testable, and source-agnostic.
 
 Post-load SQL transformations like deduplication or folder restructuring are still available to migration teams as a separate manual step, but they are outside the scope of this tool.
+
+### Source Class Architecture
+
+Each source system implements the `SourceSystem` abstract base class and is responsible for scanning, extracting metadata, and transforming data into a standard format. The pipeline does not know or care how a source collects its data. It only expects a `fetch_data()` call that returns directory records and file records in the agreed-upon shape. Adding a new source type requires no changes to the pipeline or the database layer.
 
 ### Error Classification
 
@@ -93,12 +92,11 @@ Folder and file IDs are generated using Python's `itertools.count()` rather than
 
 ## How It Works
 
-1. Walks the file system from a user-supplied root directory
-2. Builds a folder hierarchy and assigns each folder a unique ID
-3. Extracts metadata for every file (name, path, size, dates, MD5 checksum)
-4. Cleans the data in Python before writing to the database
-5. Loads folders and files into the migration database
-6. Logs pipeline activity via a stored procedure
+1. A source class scans the data source and extracts metadata
+2. The source class cleans and transforms the data into the format the pipeline expects
+3. The pipeline builds a folder hierarchy and assigns each folder a unique ID
+4. Folders and files are loaded into the migration database in batches
+5. Pipeline activity is logged via a stored procedure
 
 The pipeline will not run if either target table already has data. The user must explicitly pass `--clear` to truncate both tables before re-running.
 
@@ -113,10 +111,9 @@ data-harvester/
 │   ├── connection.py        # SQL Server connection
 │   └── repository.py        # All database read/write functions
 ├── sources/
-│   ├── base.py              # Placeholder for future abstract base class
+│   ├── base.py              # Abstract base class for source systems
 │   └── windows_fs/
-│       ├── scanner.py       # Walks the file system, returns files and folders
-│       └── metadata.py      # Extracts metadata from a single file
+│       └── WindowsFS.py     # Windows file system source implementation
 ├── pipeline/
 │   ├── orchestrator.py      # Coordinates the full pipeline run
 │   └── transformer.py       # Data cleansing functions
@@ -140,8 +137,6 @@ data-harvester/
 ```
 pyodbc
 python-dotenv
-pytest
-pytest-mock
 ```
 
 ```bash
@@ -153,13 +148,13 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-python main.py --scan_root_directory "C:\path\to\files" --server_name SQLSERVER\INSTANCE --database_name Migration --sql_username sa --password yourpassword
+python main.py --source_location "C:\path\to\files" --server_name SQLSERVER\INSTANCE --database_name Migration --sql_username sa --password yourpassword
 ```
 
 To clear tables before re-running:
 
 ```bash
-python main.py --scan_root_directory "C:\path\to\files" --server_name SQLSERVER\INSTANCE --database_name Migration --sql_username sa --password yourpassword --clear
+python main.py --source_location "C:\path\to\files" --server_name SQLSERVER\INSTANCE --database_name Migration --sql_username sa --password yourpassword --clear
 ```
 
 Alternatively, store credentials in a `.env` file and run without arguments:

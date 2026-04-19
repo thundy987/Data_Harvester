@@ -10,7 +10,7 @@ def is_directories_empty(db_connection) -> bool:
         db_connection (Connection): Db connection details.
 
     Raises:
-        Exception: 'Error querying Directories table'
+        RuntimeError: If the query against the Directories table fails.
 
     Returns:
         bool: True if the table is empty, False if the table is not empty.
@@ -24,8 +24,8 @@ def is_directories_empty(db_connection) -> bool:
             return False if cursor.fetchone() else True
 
     except Exception as e:
-        logger.error(f'Error querying Directories table: {e}')
-        raise Exception('Error querying Directories table') from e
+        logger.error(f'Failed to query Directories table: {e}')
+        raise RuntimeError('Failed to query Directories table') from e
 
 
 def populate_directories_table(db_connection, batch_list: list) -> None:
@@ -36,7 +36,7 @@ def populate_directories_table(db_connection, batch_list: list) -> None:
         batch_list (list): ProjectID, Name, Parent being written to the db.
 
     Raises:
-        Exception: 'Error writing to Directories table'
+        RuntimeError: If the batch insert into Directories fails.
     """
     try:
         with db_connection.cursor() as cursor:  # 'with' used to auto-close cursor
@@ -52,8 +52,8 @@ def populate_directories_table(db_connection, batch_list: list) -> None:
             db_connection.commit()
 
     except Exception as e:
-        logger.error(f'Error writing to Directories table {e}')
-        raise Exception('Error writing to Directories table') from e
+        logger.error(f'Failed to insert into Directories table: {e}')
+        raise RuntimeError('Failed to insert into Directories table') from e
 
 
 def is_import_files_empty(db_connection) -> bool:
@@ -63,7 +63,7 @@ def is_import_files_empty(db_connection) -> bool:
         db_connection (Connection): Db connection details.
 
     Raises:
-        Exception: 'Error querying ImportFiles table'
+        RuntimeError: If the query against the ImportFiles table fails.
 
     Returns:
         bool: True if the table is empty, False if the table is not empty.
@@ -77,8 +77,8 @@ def is_import_files_empty(db_connection) -> bool:
             return False if cursor.fetchone() else True
 
     except Exception as e:
-        logger.error(f'Error querying ImportFiles table {e}')
-        raise Exception('Error querying ImportFiles table') from e
+        logger.error(f'Failed to query ImportFiles table: {e}')
+        raise RuntimeError('Failed to query ImportFiles table') from e
 
 
 def populate_import_files_table(db_connection, batch_list: list) -> None:
@@ -89,7 +89,7 @@ def populate_import_files_table(db_connection, batch_list: list) -> None:
         batch_list (list): FileName, DocumentID, ProjectID, ModifyDate, FolderPath, CreateDate, MD5, FileSize being written to the db.
 
     Raises:
-        Exception: 'Error writing to ImportFiles table'
+        RuntimeError: If the batch insert into ImportFiles fails.
     """
     try:
         with db_connection.cursor() as cursor:  # 'with' used to auto-close cursor
@@ -103,8 +103,8 @@ def populate_import_files_table(db_connection, batch_list: list) -> None:
             db_connection.commit()
 
     except Exception as e:
-        logger.error(f'Error writing to ImportFiles table {e}')
-        raise Exception('Error writing to ImportFiles table') from e
+        logger.error(f'Failed to insert into ImportFiles table: {e}')
+        raise RuntimeError('Failed to insert into ImportFiles table') from e
 
 
 def clear_files_and_folders_tables(db_connection) -> None:
@@ -114,7 +114,7 @@ def clear_files_and_folders_tables(db_connection) -> None:
         db_connection (Connection): Db connection details.
 
     Raises:
-        Exception: 'Error clearing tables'
+        RuntimeError: If truncating the tables fails.
     """
     try:
         with db_connection.cursor() as cursor:
@@ -128,8 +128,8 @@ def clear_files_and_folders_tables(db_connection) -> None:
 
             db_connection.commit()
     except Exception as e:
-        logger.error(f'Error clearing tables: {e}')
-        raise Exception('Error clearing tables') from e
+        logger.error(f'Failed to truncate tables: {e}')
+        raise RuntimeError('Failed to truncate ImportFiles and Directories tables') from e
 
 
 def log_activity(
@@ -143,7 +143,7 @@ def log_activity(
         activity_time (datetime | None, optional): activity time stamp - Defaults to None.
 
     Raises:
-        Exception: 'Error executing Activity stored procedure'
+        RuntimeError: If executing the Activity stored procedure fails.
     """
     try:
         with db_connection.cursor() as cursor:
@@ -153,5 +153,5 @@ def log_activity(
 
             db_connection.commit()
     except Exception as e:
-        logger.error(f'Error executing Activity stored procedure: {e}')
-        raise Exception('Error executing Activity stored procedure') from e
+        logger.error(f'Failed to execute Activity stored procedure: {e}')
+        raise RuntimeError('Failed to execute Activity stored procedure') from e

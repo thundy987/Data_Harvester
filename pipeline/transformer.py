@@ -93,11 +93,12 @@ def format_date(ugly_date: float) -> str | None:
 
     Returns:
         formatted_date (str): Date string with format of yyyy-MM-ddTHH:mm:ss.fff
+        None: If the timestamp is invalid (e.g. negative, infinite, or out of range)
     """
     try:
         clean_date = datetime.fromtimestamp(ugly_date)
         formatted_date = clean_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         return formatted_date
-    except Exception as e:
-        logger.warning(f'Issue found during date formatting {e}')
+    except (ValueError, OSError, OverflowError) as e:
+        logger.warning(f'Failed to format timestamp {ugly_date}: {e}')
         return None

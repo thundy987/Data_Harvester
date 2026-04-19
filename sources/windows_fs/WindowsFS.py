@@ -18,15 +18,15 @@ class WindowsFS(SourceSystem):
             folder_list (list[Path]): All directory objects found under the root.
 
         Raises:
-            FileNotFoundError: 'User supplied an invalid root path'
-            RuntimeError: 'Error occurred during file scan'
+            FileNotFoundError: If the root path does not exist.
+            RuntimeError: If the file system scan fails.
 
         """
         # Store value in 'private backing variabe' to avoid recursion calling the base class property.
         self._source_location = source_location
 
         if not Path(source_location).exists():
-            logger.error('User supplied an invalid root path')
+            logger.error(f'Root path not found: {source_location}')
             raise FileNotFoundError(f'Root path not found: {source_location}')
         try:
             collection = list(Path(source_location).rglob('*'))
@@ -35,9 +35,9 @@ class WindowsFS(SourceSystem):
 
             self.folder_list = [f for f in collection if f.is_dir()]
 
-        except Exception as e:
-            logger.error(f'Error occurred during file scan: {e}')
-            raise RuntimeError('Error occurred during file scan') from e
+        except OSError as e:
+            logger.error(f'File system scan failed at {source_location}: {e}')
+            raise RuntimeError(f'File system scan failed at {source_location}') from e
 
     @property
     def source_location(self) -> str:
@@ -66,7 +66,7 @@ class WindowsFS(SourceSystem):
                     }
                 )
             except Exception as e:
-                logger.error(f'Skipping folder {folder}: {e}')
+                logger.warning(f'Skipping folder {folder}: {e}')
                 continue
 
         ######## File Work ########
@@ -88,7 +88,7 @@ class WindowsFS(SourceSystem):
                     }
                 )
             except Exception as e:
-                logger.error(f'Skipping file {file}: {e}')
+                logger.warning(f'Skipping file {file}: {e}')
                 continue
         return (directory_records, file_records)
 
@@ -99,8 +99,8 @@ class WindowsFS(SourceSystem):
             path_to_file (Path | str): path to the file.
 
         Raises:
-            FileNotFoundError: 'User supplied an invalid file path'
-            Exception: 'Error occurred while extracting file metadata'
+            FileNotFoundError: If the file path does not exist.
+            OSError: If reading file metadata or computing the checksum fails.
 
         Returns:
             parent_folder (str): the folder in which the file lives.
@@ -112,8 +112,7 @@ class WindowsFS(SourceSystem):
         """
 
         if not Path(path_to_file).exists():
-            logger.error('User supplied an invalid file path')
-            raise FileNotFoundError(f'File path not found: {path_to_file}')
+            raise FileNotFoundError(f'File not found: {path_to_file}')
         try:
             # temp variables
             target_file = Path(path_to_file)
@@ -141,6 +140,6 @@ class WindowsFS(SourceSystem):
                 file_size,
                 md5_hash,
             )
-        except Exception as e:
-            logger.error(f'Error occurred while extracting file metadata: {e}')
-            raise RuntimeError('Error occurred while extracting file metadata') from e
+        except OSError as e:
+            logger.error(f'Failed to extract metadata from {path_to_file}: {e}')
+            raise
