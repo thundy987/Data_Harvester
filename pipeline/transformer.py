@@ -41,7 +41,7 @@ def find_illegal_characters_in_file_name(file_name: str) -> list | None:
     return None
 
 
-def format_date(ugly_date: float) -> str | None:
+def format_unix_date_to_iso(ugly_date: float) -> str | None:
     """Converts a Unix timestamp (float) to ISO 8601 date format (str).
 
     Args:

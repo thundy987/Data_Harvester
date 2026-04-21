@@ -10,7 +10,7 @@ from db.repository import (
     is_import_files_empty,
 )
 from pipeline.orchestrator import run_pipeline
-from sources.windows_fs.WindowsFS import WindowsFS
+from sources.PDMDatabase.PDMDatabase import PDMDatabase
 from utils.logger import logger
 
 load_dotenv()
@@ -49,7 +49,9 @@ def main():
 
     if args.batch_size <= 0:
         logger.error(f'Invalid batch size: {args.batch_size}')
-        raise ValueError(f'Batch size must be a positive integer, got {args.batch_size}')
+        raise ValueError(
+            f'Batch size must be a positive integer, got {args.batch_size}'
+        )
 
     db_connection = None  # guard against 'finally' running if connection fails
     try:
@@ -70,7 +72,8 @@ def main():
                 'ImportFiles table is not empty. Re-run with --clear to clear tables.'
             )
 
-        source = WindowsFS(args.source_location)
+        # source = WindowsFS(args.source_location)
+        source = PDMDatabase('sql\\dba', 'TSQLDemo', 'sa', 'g')
 
         run_pipeline(db_connection, args.batch_size, source)
 

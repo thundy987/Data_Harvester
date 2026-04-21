@@ -1,6 +1,6 @@
 # Data Harvester
 
-A Python ETL pipeline that scans a Windows file system, extracts file and folder metadata, and loads it into a SQL Server migration database. This is the data collection layer of a broader SolidWorks PDM migration workflow.
+A Python ETL pipeline that extracts file and folder metadata from source systems and loads it into a SQL Server migration database. This is the data collection layer of a broader SolidWorks PDM migration workflow.
 
 ```
 Source System → [data-harvester] → SQL Server Migration DB → XML Export Tool → PDM Vault
@@ -112,8 +112,10 @@ data-harvester/
 │   └── repository.py        # All database read/write functions
 ├── sources/
 │   ├── base.py              # Abstract base class for source systems
-│   └── windows_fs/
-│       └── WindowsFS.py     # Windows file system source implementation
+│   ├── windows_fs/
+│   │   └── WindowsFS.py     # Windows file system source implementation
+│   └── pdm_database/
+│       └── PDMDatabase.py   # SolidWorks PDM vault database source implementation
 ├── pipeline/
 │   ├── orchestrator.py      # Coordinates the full pipeline run
 │   └── transformer.py       # Data cleansing functions
@@ -167,7 +169,7 @@ python main.py
 
 ## Limitations
 
-> V1 only supports Windows file systems, SQL Server authentication, and command-line execution. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column.
+> SQL Server authentication only. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column. MD5 value cannot be harvested from a PDMDatabase alone, without it's accompanying Archive folder.
 
 ---
 
@@ -175,7 +177,7 @@ python main.py
 
 - [x] v2 - Batch inserts with `--batch_size` argument (default: 1000)
 - [x] v2 - Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
-- [ ] v2 - SQL database source handling
+- [x] v2 - PDM database source handling
 - [ ] v2 - API source handling
 - [ ] v3 - SolidWorks Document Manager integration for custom file properties
 - [ ] v3 - Incremental/delta load support

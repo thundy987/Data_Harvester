@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pipeline.transformer import (
     find_illegal_characters_in_file_name,
-    format_date,
+    format_unix_date_to_iso,
     remove_white_spaces,
 )
 from sources.base import SourceSystem
@@ -80,7 +80,7 @@ class WindowsFS(SourceSystem):
             try:
                 props_dirty = self._extract_properties(file)
 
-                props_clean = self._cleanse_record(props_dirty)
+                props_clean = self._cleanse_file_record(props_dirty)
                 file_records.append(
                     {
                         'FileName': props_clean['FileName'],
@@ -141,7 +141,7 @@ class WindowsFS(SourceSystem):
             logger.error(f'Failed to extract metadata from {path_to_file}: {e}')
             raise
 
-    def _cleanse_record(self, raw_metadeta: dict) -> dict:
+    def _cleanse_file_record(self, raw_metadeta: dict) -> dict:
         """Exectues cleansing functions as needed on the source data to conform to target data model.
 
         Args:
@@ -157,8 +157,8 @@ class WindowsFS(SourceSystem):
             if illegal:
                 logger.warning(f'{file_name} contains illegal characters: {illegal}')
 
-        create_date = format_date(raw_metadeta['CreateDate'])
-        modify_date = format_date(raw_metadeta['ModifyDate'])
+        create_date = format_unix_date_to_iso(raw_metadeta['CreateDate'])
+        modify_date = format_unix_date_to_iso(raw_metadeta['ModifyDate'])
 
         return {
             'FileName': file_name,
