@@ -158,15 +158,14 @@ The tool walks you through source selection, credential entry, and batch size co
 
 ## Roadmap
 
-- [x] v2 - Batch inserts with `--batch_size` argument (default: 1000)
-- [x] v2 - Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
-- [x] v2 - PDM database source handling
-- [x] v2 - Convert CLI arguments into rich prompt interaction.
-- [ ] v2 - API source handling
-- [ ] v3 - SolidWorks Document Manager integration for custom file properties
-- [ ] v3 - Incremental/delta load support
-- [ ] v3 - Resume capability after mid-run failure
-- [ ] v3 - Additional source systems (SolidWorks PDM, Windchill)
+- [x] - Batch inserts with `--batch_size` argument (default: 1000)
+- [x] - Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
+- [x] - PDM database source handling
+- [x] - Convert CLI arguments into rich prompt interaction.
+- [ ] - Write tests
+- [ ] - API source handling
+- [ ] - Incremental/delta load support
+- [ ] - Resume capability after mid-run failure
 - [ ] v3 - GUI
 
 ---
