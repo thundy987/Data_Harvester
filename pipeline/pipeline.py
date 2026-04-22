@@ -31,7 +31,9 @@ def run_directories_pipeline(
     """
     if not is_directories_empty(db_connection):
         logger.error('Directories table is not empty')
-        raise RuntimeError('Directories table is not empty. Re-run with --clear to clear tables.')
+        raise RuntimeError(
+            'Directories table is not empty. Re-run with --clear to clear tables.'
+        )
 
     lookup_dict = {}
 
@@ -113,7 +115,9 @@ def run_files_pipeline(
     """
     if not is_import_files_empty(db_connection):
         logger.error('ImportFiles table is not empty')
-        raise RuntimeError('ImportFiles table is not empty. Re-run with --clear to clear tables.')
+        raise RuntimeError(
+            'ImportFiles table is not empty. Re-run with --clear to clear tables.'
+        )
 
     batch_list = []
 
@@ -176,7 +180,10 @@ def run_pipeline(
         RuntimeError: If the directories or files pipeline fails.
     """
     try:
-        directory_records, file_records = source.fetch_data()
+        data = source.fetch_data()
+        directory_records = data['folders']
+        file_records = data['files']
+
         log_activity(db_connection, 'Start populating dbo.Directories')
         logger.info('Start populating dbo.Directories')
         directory_lookup = run_directories_pipeline(

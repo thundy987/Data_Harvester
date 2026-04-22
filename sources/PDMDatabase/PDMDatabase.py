@@ -34,7 +34,7 @@ class PDMDatabase(SourceSystem):
 
     def fetch_data(
         self,
-    ) -> tuple[list[dict], list[dict]]:
+    ) -> dict[str, list[dict]]:
         """Connects to the PDM vault database and queries the Projects and Documents tables to build directory and file records.
 
         Raises:
@@ -120,7 +120,7 @@ class PDMDatabase(SourceSystem):
                     except Exception as e:
                         logger.warning(f'Skipping file {row.FileName}: {e}')
                         continue
-            return (directory_records, file_records)
+            return {'folders': directory_records, 'files': file_records}
         except Exception as e:
             logger.error(f'Failed to query the {self.db_name} database: {e}')
             raise RuntimeError(f'Failed to query the {self.db_name} database') from e

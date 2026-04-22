@@ -50,7 +50,7 @@ class WindowsFS(SourceSystem):
         """
         return self._source_location
 
-    def fetch_data(self) -> tuple[list[dict], list[dict]]:
+    def fetch_data(self) -> dict[str, list[dict]]:
         """Collects folder and file information from the source location.
 
         Returns:
@@ -94,7 +94,7 @@ class WindowsFS(SourceSystem):
             except Exception as e:
                 logger.warning(f'Skipping file {file}: {e}')
                 continue
-        return (directory_records, file_records)
+        return {'folders': directory_records, 'files': file_records}
 
     def _extract_properties(self, path_to_file: Path | str) -> dict:
         """Extracts meta data from a file, given the path of the file.
