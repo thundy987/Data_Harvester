@@ -1,4 +1,4 @@
-from pipeline.orchestrator import run_pipeline
+from pipeline.pipeline import run_pipeline
 from ui.cli_prompt import cli_setup
 from utils.logger import logger
 
