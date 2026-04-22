@@ -1,4 +1,5 @@
 pyodbc
 python-dotenv
+rich
 pytest
 pytest-mock
