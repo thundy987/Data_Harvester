@@ -3,7 +3,7 @@ from datetime import datetime
 from utils.logger import logger
 
 
-def remove_white_spaces(text: str) -> str | None:
+def remove_white_spaces(text: str | None) -> str | None:
     """Removes any leading and trailing spaces from a str.
 
     Args:
