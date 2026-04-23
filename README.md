@@ -109,11 +109,20 @@ data-harvester/
 │   └── PDMDatabase/
 │       └── PDMDatabase.py   # SolidWorks PDM vault database source implementation
 ├── pipeline/
-│   ├── orchestrator.py      # Coordinates the full pipeline run
+│   ├── pipeline.py          # Coordinates the full pipeline run
 │   └── transformer.py       # Data cleansing functions
 ├── utils/
 │   ├── id_generator.py      # Generates folder and file IDs
 │   └── logger.py            # Writes logs to file and console
+├── tests/
+│   ├── connection_test.py
+│   ├── id_generator_test.py
+│   ├── pdm_database_test.py
+│   ├── pipeline_test.py
+│   ├── repository_test.py
+│   ├── transformer_test.py
+│   └── windows_fs_test.py
+├── pytest.ini
 ├── requirements.txt
 └── README.md
 ```
@@ -132,6 +141,8 @@ data-harvester/
 pyodbc
 python-dotenv
 rich
+pytest
+pytest-mock
 ```
 
 ```bash
@@ -150,6 +161,24 @@ The tool walks you through source selection, credential entry, and batch size co
 
 ---
 
+## Testing
+
+52 unit tests across 7 test files. No database connection required.
+
+Tests use `unittest.mock` to replace real dependencies like db connections with `MagicMock` so tests run without a real db or external service. Filesystem tests use pytest's `tmp_path` fixture to create real temporary folders and files on disk
+
+```bash
+pytest
+```
+
+To run a specific test file:
+
+```bash
+pytest tests/repository_test.py
+```
+
+---
+
 ## Limitations
 
 > SQL Server authentication only. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column. MD5 value cannot be harvested from a PDMDatabase alone, without it's accompanying Archive folder.
@@ -162,7 +191,7 @@ The tool walks you through source selection, credential entry, and batch size co
 - [x] - Abstract base class for source systems (`sources/base.py` and `sources/windows_fs/WindowsFS.py`)
 - [x] - PDM database source handling
 - [x] - Convert CLI arguments into rich prompt interaction.
-- [ ] - Write tests
+- [x] - Write tests
 - [ ] - API source handling
 - [ ] - Incremental/delta load support
 - [ ] - Resume capability after mid-run failure
