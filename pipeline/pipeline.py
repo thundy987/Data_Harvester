@@ -32,7 +32,7 @@ def run_directories_pipeline(
     if not is_directories_empty(db_connection):
         logger.error('Directories table is not empty')
         raise RuntimeError(
-            'Directories table is not empty. Re-run with --clear to clear tables.'
+            'Directories table is not empty. Clear the tables and re-run.'
         )
 
     lookup_dict = {}
@@ -116,7 +116,7 @@ def run_files_pipeline(
     if not is_import_files_empty(db_connection):
         logger.error('ImportFiles table is not empty')
         raise RuntimeError(
-            'ImportFiles table is not empty. Re-run with --clear to clear tables.'
+            'ImportFiles table is not empty. Clear the tables and re-run.'
         )
 
     batch_list = []

@@ -14,7 +14,7 @@ def connect_to_db(server_name: str, db_name: str, username: str, password: str):
     Raises:
         ConnectionError: If the database connection cannot be established.
     Returns:
-        Connection (Connection): connection string for pyodbc.
+        Connection (Connection): connection object for pyodbc.
     """
     try:
         connection = pyodbc.connect(

@@ -4,6 +4,8 @@ from db.connection import connect_to_db
 from sources.base import SourceSystem
 from utils.logger import logger
 
+_SQL_DIR = Path(__file__).parent / 'sql'
+
 
 class PDMDatabase(SourceSystem):
     def __init__(self, server_name: str, db_name: str, username: str, password: str):
@@ -37,7 +39,7 @@ class PDMDatabase(SourceSystem):
             RuntimeError: If the database query fails.
 
         Returns:
-            tuple[list[dict], list[dict]]: The directories and files with their properties.
+            dict[str, list[dict]]: A dictionary with 'folders' and 'files' keys, each containing a list of record dicts.
         """
         db_connection = None  # guard against 'finally' running if connection fails
         try:
@@ -46,7 +48,7 @@ class PDMDatabase(SourceSystem):
             )
             with db_connection.cursor() as cursor:
                 # Query the Projects table and build directory_records[]
-                sql_folders = 'SELECT Name as FolderName, Path AS FolderPath FROM Projects where Deleted = 0 AND Path IS NOT NULL'
+                sql_folders = (_SQL_DIR / 'get_folders.sql').read_text()
                 cursor.execute(sql_folders)
 
                 directory_records = []
@@ -75,7 +77,7 @@ class PDMDatabase(SourceSystem):
                         logger.warning(f'Skipping folder {row.FolderPath}: {e}')
                         continue
                 # Query the Documents table and build file_records[]
-                sql_files = "WITH Columns AS (SELECT d.Filename AS FileName, p.Name as FolderName, p.Path AS FolderPath, r.RevNR AS versions, FIRST_VALUE(r.Date) OVER (PARTITION BY d.DocumentID ORDER BY r.RevNR ASC) AS CreateDate, FIRST_VALUE(r.Date) OVER (PARTITION BY d.DocumentID ORDER BY r.RevNR DESC) AS ModifyDate, FIRST_VALUE(r.FileSize) OVER (PARTITION BY d.DocumentID ORDER BY r.RevNR DESC) AS FileSize FROM Revisions r INNER JOIN Documents d ON r.DocumentID = d.DocumentID INNER JOIN DocumentsInProjects dp ON d.DocumentID = dp.DocumentID INNER JOIN Projects p ON dp.ProjectID = p.ProjectID INNER JOIN ObjectType ot ON d.ObjectTypeID = ot.ObjectTypeID WHERE ot.Description = 'Normal Document' AND d.Deleted = 0 AND EXISTS (SELECT 1 FROM DocumentsInProjects dip INNER JOIN Projects p ON dip.ProjectID = p.ProjectID WHERE dip.DocumentID = d.DocumentID AND dip.Deleted = 0 AND p.Deleted = 0)) SELECT DISTINCT Foldername, FileName, ModifyDate, FolderPath, CreateDate, FileSize FROM Columns"
+                sql_files = (_SQL_DIR / 'get_files.sql').read_text()
 
                 cursor.execute(sql_files)
 

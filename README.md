@@ -65,6 +65,8 @@ Each source system implements the `SourceSystem` abstract base class and is resp
 
 Post-load SQL transformations like deduplication or folder restructuring are still available to migration teams as a separate manual step, but they are outside the scope of this tool.
 
+`transformer.py` contains shared cleansing functions currently only used by `WindowsFS`. If no other source ends up needing them, they may be moved into the `WindowsFS` class as private methods.
+
 ### Error Classification
 
 Errors are split into recoverable and unrecoverable. A locked file or unreadable metadata gets logged and skipped so the pipeline keeps going. A failed DB connection or invalid root path halts the pipeline immediately because there is nothing useful to do after that.
@@ -100,20 +102,28 @@ data-harvester/
 ├── ui/
 │   └── cli_prompt.py        # Interactive CLI setup (source, credentials, batch size)
 ├── db/
+│   ├── __init__.py
 │   ├── connection.py        # SQL Server connection
 │   └── repository.py        # All database read/write functions
 ├── sources/
+│   ├── __init__.py
 │   ├── base.py              # Abstract base class for source systems
 │   ├── windows_fs/
 │   │   └── WindowsFS.py     # Windows file system source implementation
 │   └── PDMDatabase/
-│       └── PDMDatabase.py   # SolidWorks PDM vault database source implementation
+│       ├── PDMDatabase.py   # SolidWorks PDM vault database source implementation
+│       └── sql/             # SQL queries loaded at runtime
+│           ├── get_folders.sql
+│           └── get_files.sql
 ├── pipeline/
+│   ├── __init__.py
 │   ├── pipeline.py          # Coordinates the full pipeline run
 │   └── transformer.py       # Data cleansing functions
 ├── utils/
+│   ├── __init__.py
 │   ├── id_generator.py      # Generates folder and file IDs
 │   └── logger.py            # Writes logs to file and console
+├── logs/                    # Timestamped log files created at runtime
 ├── tests/
 │   ├── connection_test.py
 │   ├── id_generator_test.py
@@ -159,6 +169,8 @@ python main.py
 
 The tool walks you through source selection, credential entry, and batch size configuration via interactive prompts. No command-line arguments are required.
 
+Each run creates a timestamped log file in the `logs/` directory. The log captures connection events, batch flushes, skipped records, and any errors encountered during the pipeline run.
+
 ---
 
 ## Testing
@@ -181,7 +193,7 @@ pytest tests/repository_test.py
 
 ## Limitations
 
-> SQL Server authentication only. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column. MD5 value cannot be harvested from a PDMDatabase alone, without it's accompanying Archive folder.
+> SQL Server authentication only. There is no resume capability if the pipeline fails mid-run. SolidWorks custom file properties are not extracted because they require the Document Manager SDK. Concurrent pipeline instances are not supported. `Directories.Path` is not populated by the harvester. The Migration db has a stored procedure to populate that column. MD5 value cannot be harvested from a PDMDatabase alone, without its accompanying Archive folder.
 
 ---
 
@@ -195,7 +207,7 @@ pytest tests/repository_test.py
 - [ ] - API source handling
 - [ ] - Incremental/delta load support
 - [ ] - Resume capability after mid-run failure
-- [ ] v3 - GUI
+- [ ] - GUI
 
 ---
 

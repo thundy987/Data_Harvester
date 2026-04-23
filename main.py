@@ -10,7 +10,8 @@ def main():
         db_connection, batch, source = cli_setup()
 
         run_pipeline(db_connection, batch, source)
-
+    except SystemExit:
+        pass
     except Exception as e:
         logger.error(f'Application error: {e}')
     finally:

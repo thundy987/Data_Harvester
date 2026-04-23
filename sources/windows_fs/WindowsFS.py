@@ -54,7 +54,7 @@ class WindowsFS(SourceSystem):
         """Collects folder and file information from the source location.
 
         Returns:
-            tuple[list[dict], list[dict]]: The directories and files with their properties.
+            dict[str, list[dict]]: A dictionary with 'folders' and 'files' keys, each containing a list of record dicts.
         """
         ######## Folder Work ########
         sorted_folders = sorted(self.folder_list, key=lambda p: len(p.parts))
@@ -142,7 +142,7 @@ class WindowsFS(SourceSystem):
             raise
 
     def _cleanse_file_record(self, raw_metadeta: dict) -> dict:
-        """Exectues cleansing functions as needed on the source data to conform to target data model.
+        """Executes cleansing functions as needed on the source data to conform to target data model.
 
         Args:
             raw_metadeta (dict): metadata of a harvested file

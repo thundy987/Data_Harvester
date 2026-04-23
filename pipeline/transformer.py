@@ -32,7 +32,6 @@ def find_illegal_characters_in_file_name(file_name: str) -> list | None:
 
     if file_name.endswith('.'):
         illegal_characters.append('trailing period')
-        logger.warning(f'{file_name} has a trailing period')
 
     if illegal_characters:
         logger.warning(f'{file_name} contains illegal characters: {illegal_characters}')
